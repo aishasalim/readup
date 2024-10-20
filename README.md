@@ -17,7 +17,8 @@ Designed and developed by: Aisha Salimgereyeva, Sahrish Afzal, Maryam Nisar
 
 ## About
 
-  
+  [![YouTube Video](https://img.youtube.com/vi/CQt7erndSao/0.jpg)](https://youtu.be/CQt7erndSao)
+
 
 ### Description and Purpose
 
