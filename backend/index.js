@@ -1,23 +1,25 @@
-require('dotenv').config();
+// index.js
+require('dotenv').config(); // Load environment variables first
 const express = require('express');
 const cors = require('cors');
-const { Pool } = require('pg');
 
 const app = express();
-const PORT = process.env.PORT || 5001;
 
-// Enable CORS
-app.use(cors());
-app.use(express.json());
+// Middleware
+app.use(cors()); // Enable CORS
+app.use(express.json()); // Parse JSON bodies
 
-// PostgreSQL connection pool
-const pool = new Pool({
-    user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    password: process.env.DB_PASSWORD,
-    port: process.env.DB_PORT,
-    ssl: {
-        rejectUnauthorized: false
-    },
+// Routes
+const booksRouter = require('./routes/books');
+app.use('/api/books', booksRouter);
+
+// Root Route
+app.get('/', (req, res) => {
+  res.send('Welcome to the Book API');
+});
+
+// Start the server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
