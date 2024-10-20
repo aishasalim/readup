@@ -1,17 +1,6 @@
-// index.js
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
+// db.js
 const { Pool } = require('pg');
 
-// Create an instance of Express
-const app = express();
-
-// Middleware
-app.use(cors()); // Enable CORS
-app.use(express.json()); // Parse JSON bodies
-
-// PostgreSQL connection pool
 const pool = new Pool({
   user: process.env.DB_USER,
   host: process.env.DB_HOST,

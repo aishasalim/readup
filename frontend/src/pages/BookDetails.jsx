@@ -3,6 +3,7 @@ import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { Container, Typography, Grid, Card, CardContent, CardMedia, Button } from '@mui/material';
 import Navbar from '../components/Navbar.jsx';
+import Reviews from '../components/Reviews.jsx'; // Import the Reviews component
 
 function BookDetails() {
   const location = useLocation();
@@ -27,18 +28,19 @@ function BookDetails() {
     );
   }
 
-  const { title, author, book_image, description, amazon_product_url } = book;
+  const { title, author, book_image, description, amazon_product_url, primary_isbn13 } = book;
 
   return (
     <>
-    <Navbar />
-    <Container sx={{ py: 4 }}>
-      <Grid container justifyContent="center" sx={{ mb: 4 }}>
-        <Button variant="outlined" component={Link} to="/" color="primary">
-          Back to Home
-        </Button>
-      </Grid>
-      <Grid container spacing={4}>
+      <Navbar />
+      <Container sx={{ pb: 4 }}>
+        {/* Modify the Grid container to align the button to the left */}
+        <Grid container justifyContent="flex-start" sx={{ my: 2 }}>
+          <Button variant="outlined" component={Link} to="/" color="primary">
+            Back to Home
+          </Button>
+        </Grid>
+        <Grid container spacing={4}>
           <Grid item xs={12} md={4}>
             <Card>
               {book_image && (
@@ -75,19 +77,13 @@ function BookDetails() {
             </Card>
           </Grid>
           <Grid item xs={12} md={8}>
-            <Typography variant="h6" gutterBottom>
-              Reviews
-            </Typography>
-            {/* Since we're not fetching reviews separately, display a placeholder or use existing data */}
-            <Typography variant="body2" color="text.secondary">
-              Reviews are not available in this view.
-            </Typography>
+            {/* Integrate the Reviews component */}
+            <Reviews bookIsbn={primary_isbn13} />
           </Grid>
-      </Grid>
-    </Container>
+        </Grid>
+      </Container>
     </>
   );
 }
 
 export default BookDetails;
-
