@@ -13,7 +13,7 @@ const Navbar = () => {
 
   const NAV_LINKS = [
     { label: 'FEED', path: '/' },
-    { label: 'CREATE', path: '/create' },
+    { label: 'WRITE A REVIEW', path: '/create' },
     { label: 'DASHBOARD', path: isSignedIn ? '/dashboard' : '/sign-in' },
   ];
 

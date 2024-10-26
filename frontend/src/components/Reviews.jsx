@@ -20,11 +20,18 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  Alert,
-} from '@mui/material';
+  Alert } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import ThumbUpIcon from '@mui/icons-material/ThumbUp';
+import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
 import { useAuth, useUser } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom'; 
+import MuiAlert from '@mui/material/Alert';
+
+// Snackbar Alert Component
+const AlertComponent = React.forwardRef(function Alert(props, ref) {
+  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+});
 
 const Reviews = ({ bookIsbn, book }) => {
   const navigate = useNavigate();
@@ -43,6 +50,9 @@ const Reviews = ({ bookIsbn, book }) => {
   // State for delete confirmation dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [reviewToDelete, setReviewToDelete] = useState(null);
+
+  // Snackbar state
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   useEffect(() => {
     fetchReviews();
@@ -108,6 +118,7 @@ const Reviews = ({ bookIsbn, book }) => {
     if (!reviewToDelete) return;
     try {
       const token = await getToken();
+      console.log('Delete token:', token); // Log the token for debugging
       await axios.delete(`http://localhost:3000/api/reviews/${reviewToDelete}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -115,10 +126,15 @@ const Reviews = ({ bookIsbn, book }) => {
       });
       // Remove the deleted review from the state
       setReviews((prevReviews) => prevReviews.filter((rev) => rev.review_id !== reviewToDelete));
+      setSnackbar({ open: true, message: 'Review deleted successfully.', severity: 'success' });
       setError(null);
     } catch (err) {
       console.error('Error deleting review:', err);
-      setError('Failed to delete review.');
+      if (err.response && err.response.data && err.response.data.error) {
+        setError(err.response.data.error);
+      } else {
+        setError('Failed to delete review.');
+      }
     } finally {
       setDeleteDialogOpen(false);
       setReviewToDelete(null);
@@ -134,11 +150,12 @@ const Reviews = ({ bookIsbn, book }) => {
   };
 
   /**
-   * Upvote a review.
+   * Toggle upvote for a review.
    */
-  const handleUpvote = async (reviewId) => {
+  const handleUpvote = async (reviewId, userUpvoted) => {
     try {
       const token = await getToken();
+      console.log('Upvote toggle token:', token); // For debugging
       const response = await axios.post(
         `http://localhost:3000/api/reviews/${reviewId}/upvote`,
         {},
@@ -149,20 +166,40 @@ const Reviews = ({ bookIsbn, book }) => {
         }
       );
 
-      // Update the upvotes in the local state
+      // Determine action based on response
+      const { upvotes, action } = response.data;
+
+      // Update the upvotes and userUpvoted status in the local state
       setReviews((prevReviews) =>
         prevReviews.map((review) =>
-          review.review_id === reviewId ? { ...review, upvotes: response.data.upvotes } : review
+          review.review_id === reviewId
+            ? { 
+                ...review, 
+                upvotes: upvotes, 
+                userUpvoted: action === 'added' 
+              }
+            : review
         )
       );
+
+      // Show snackbar notification
+      if (action === 'added') {
+        setSnackbar({ open: true, message: 'Upvoted successfully!', severity: 'success' });
+      } else if (action === 'removed') {
+        setSnackbar({ open: true, message: 'Upvote removed.', severity: 'info' });
+      }
     } catch (err) {
-      console.error('Error upvoting review:', err);
-      setError('Failed to upvote review.');
+      console.error('Error toggling upvote:', err);
+      if (err.response && err.response.data && err.response.data.error) {
+        setError(err.response.data.error);
+      } else {
+        setError('Failed to toggle upvote.');
+      }
     }
   };
 
   return (
-    <Box  sx={{ maxHeight: '70vh', overflowY: 'auto' }}>
+    <Box sx={{ maxHeight: '70vh', overflowY: 'auto' }}>
       {/* Reviews List */}
       {loading ? (
         <Grid container justifyContent="center" alignItems="center" sx={{ minHeight: '20vh' }}>
@@ -173,9 +210,9 @@ const Reviews = ({ bookIsbn, book }) => {
           {error}
         </Typography>
       ) : reviews.length > 0 ? (
-        <Grid container>
+        <Grid container spacing={2}>
           {reviews.map((review) => (
-            <Grid item xs={12} key={review.review_id} sx={{ mx: 0, px: 0 }}>
+            <Grid item xs={12} key={review.review_id}>
               <Card>
                 <CardHeader
                   avatar={
@@ -204,13 +241,16 @@ const Reviews = ({ bookIsbn, book }) => {
                     {review.review_text}
                   </Typography>
                 </CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', pb: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', pb: 2, pl: 2 }}>
                   <Button
                     size="small"
-                    variant="outlined"
-                    onClick={() => handleUpvote(review.review_id)}
+                    variant={review.userUpvoted ? "contained" : "outlined"}
+                    color={review.userUpvoted ? "primary" : "default"}
+                    onClick={() => handleUpvote(review.review_id, review.userUpvoted)}
+                    disabled={!user} // Disable if not authenticated
+                    startIcon={review.userUpvoted ? <ThumbUpIcon /> : <ThumbUpOffAltIcon />}
                   >
-                    Upvote ({review.upvotes})
+                    {review.userUpvoted ? 'Remove Upvote' : 'Upvote'} ({review.upvotes})
                   </Button>
                 </Box>
 

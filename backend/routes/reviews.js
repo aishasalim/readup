@@ -140,61 +140,86 @@ router.get('/:isbn', async (req, res) => {
 
 /**
  * @route   POST /api/reviews/:review_id/upvote
- * @desc    Upvote a review
+ * @desc    Toggle upvote for a review
  * @access  Private
  */
 router.post('/:review_id/upvote', requireAuth(), async (req, res) => {
   const { review_id } = req.params;
   const { userId } = req.auth;
 
+  console.log(`Upvote toggle request by user: ${userId} for review: ${review_id}`);
+
   try {
+    // Check if the review exists
+    const reviewCheck = await pool.query(
+      `SELECT * FROM reviews WHERE review_id = $1`,
+      [review_id]
+    );
+
+    if (reviewCheck.rows.length === 0) {
+      console.log(`Review not found: ${review_id}`);
+      return res.status(404).json({ error: 'Review not found.' });
+    }
+
     // Check if the user has already upvoted this review
-    const checkResult = await pool.query(
+    const upvoteCheck = await pool.query(
       `SELECT * FROM upvotes WHERE review_id = $1 AND user_id = $2`,
       [review_id, userId]
     );
 
-    if (checkResult.rows.length > 0) {
-      return res.status(400).json({ error: 'You have already upvoted this review.' });
+    let action;
+    let updatedUpvotes;
+
+    if (upvoteCheck.rows.length > 0) {
+      // User has already upvoted; remove the upvote
+      await pool.query(
+        `DELETE FROM upvotes WHERE review_id = $1 AND user_id = $2`,
+        [review_id, userId]
+      );
+
+      // Decrement the upvotes count
+      const updateResult = await pool.query(
+        `UPDATE reviews
+         SET upvotes = upvotes - 1
+         WHERE review_id = $1
+         RETURNING upvotes`,
+        [review_id]
+      );
+
+      updatedUpvotes = updateResult.rows[0].upvotes;
+      action = 'removed';
+      console.log(`User ${userId} removed upvote from review ${review_id}`);
+    } else {
+      // User has not upvoted; add the upvote
+      await pool.query(
+        `INSERT INTO upvotes (review_id, user_id)
+         VALUES ($1, $2)`,
+        [review_id, userId]
+      );
+
+      // Increment the upvotes count
+      const updateResult = await pool.query(
+        `UPDATE reviews
+         SET upvotes = upvotes + 1
+         WHERE review_id = $1
+         RETURNING upvotes`,
+        [review_id]
+      );
+
+      updatedUpvotes = updateResult.rows[0].upvotes;
+      action = 'added';
+      console.log(`User ${userId} added upvote to review ${review_id}`);
     }
 
-    // Insert the upvote
-    await pool.query(
-      `INSERT INTO upvotes (review_id, user_id)
-       VALUES ($1, $2)`,
-      [review_id, userId]
-    );
-
-    // Increment the upvotes count in the reviews table
-    const result = await pool.query(
-      `UPDATE reviews
-       SET upvotes = upvotes + 1
-       WHERE review_id = $1
-       RETURNING *`,
-      [review_id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Review not found.' });
-    }
-
-    const review = result.rows[0];
-
-    // Fetch user data from Clerk
-    try {
-      const user = await clerkClient.users.getUser(review.user_id);
-      review.nickname = user.username || user.firstName || 'Anonymous';
-      review.profile_image_url = user.profileImageUrl || '';
-    } catch (err) {
-      console.error(`Error fetching user ${review.user_id}:`, err);
-      review.nickname = 'Anonymous';
-      review.profile_image_url = '';
-    }
-
-    res.json(review);
+    // Respond with the updated upvotes and action
+    res.json({
+      review_id: review_id,
+      upvotes: updatedUpvotes,
+      action, // 'added' or 'removed'
+    });
   } catch (error) {
-    console.error('Error upvoting review:', error);
-    res.status(500).json({ error: 'Failed to upvote review.' });
+    console.error('Error toggling upvote:', error);
+    res.status(500).json({ error: 'Failed to toggle upvote.' });
   }
 });
 
