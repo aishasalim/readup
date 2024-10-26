@@ -6,7 +6,9 @@ import { SignIn, SignUp } from '@clerk/clerk-react';
 import HomePage from './pages/HomePage';
 import CenteredContainer from './components/CenteredContainer'; 
 import BookDetails from './pages/BookDetails';
-
+import CreateReviewISBN from './pages/CreateReviewISBN';
+import CreateReviewSearch from './pages/CreateReviewSearch';
+import Dashboard from './pages/Dashboard';
 
 function App() {
   return (
@@ -14,6 +16,9 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/book/:isbn" element={<BookDetails />} />
+        <Route path="/book/create/:isbn" element={<CreateReviewISBN />} />
+        <Route path="/create" element={<CreateReviewSearch />} />
+        <Route path="/dashboard" element={<Dashboard />} /> 
 
         {/* SignIn Route */}
         <Route

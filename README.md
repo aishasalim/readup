@@ -58,9 +58,9 @@ Inspired by the desire to create a community-driven platform for book lovers, th
     - [ ] Many-to-many: Users and Saved Books (users can save many books, and books can be saved by many users, with a join table).
   - [ ] RESTful API with proper route naming:
     - [x] **GET**: Retrieve books, reviews, and user information.
-    - [ ] **POST**: Add a new review, save a book to a user’s list.
-    - [ ] **PATCH**: Update a book review or user profile.
-    - [ ] **DELETE**: Remove a saved book from a list or delete a review.
+    - [x] **POST**: Add a new review, save a book to a user’s list.
+    - [x] **PATCH**: Update a book review or user profile.
+    - [x] **DELETE**: Remove a saved book from a list or delete a review.
   - [ ] Ability to reset the database to its default state.
 
 - [ ] **Frontend:**
@@ -68,7 +68,7 @@ Inspired by the desire to create a community-driven platform for book lovers, th
   - [x] Implement hierarchically designed components with containers and presentational components:
     - [x] **Page Components**: Home, Dashboard, Book Details, Saved Books, Review Pages.
     - [x] **Component Types**: Review component, Book Card, List components.
-  - [ ] Redirection: Implement user redirection (e.g., after submitting a review).
+  - [x] Redirection: Implement user redirection (e.g., after submitting a review).
   - [ ] Interactive elements: Allow users to add reviews and save books without navigating to a new page.
   - [ ] Deploy the app on Railway, ensuring all features and pages work.
 
@@ -109,16 +109,44 @@ Inspired by the desire to create a community-driven platform for book lovers, th
   
 ## Installation Instructions
 
-  
+1.  download zip
+2.  open it in vs code
+3.  Run
 
-1. Clone the repository:
+> cd backend
+> npm install
 
-```bash
 
-git clone [your_repo_link_here]
+4.  Run
+> cd ..
+> cd frontend
+> npm install
 
-cd [your_project_directory_here]
+5.  add .env file into backend
+> DB_USER=
+> DB_PASSWORD=
+> DB_HOST=
+> DB_PORT=
+> DB_NAME= 
+> NYT_BOOKS_API_KEY=
+> GOOGLE_BOOKS_API_KEY=
+> CLERK_PUBLISHABLE_KEY=
+>CLERK_SECRET_KEY=
 
-npm install
+5.  add .env file into frontend
+>VITE_CLERK_PUBLISHABLE_KEY=
+>CLERK_SECRET_KEY=
+>GOOGLE_BOOKS_API_KEY=
 
-npm start
+6.  in the terminal:
+
+>cd backend
+>npm install morgan
+>npm start
+
+7.  open other terminal to run frontend:
+
+>cd frontend
+>npm install @clerk/clerk-react
+>npm install react-router-dom
+>npm run dev

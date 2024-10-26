@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar.jsx';
 import axios from 'axios';
+import GitHubIcon from '@mui/icons-material/GitHub';
 import {
   Grid,
   Container,
@@ -10,6 +11,7 @@ import {
   TextField,
   Button,
   Box,
+  IconButton,
 } from '@mui/material';
 import BookCard from '../components/BookCard';
 
@@ -217,6 +219,31 @@ function HomePage() {
           </Typography>
         )}
       </Container>
+
+      {/* Footer */}
+      <Box
+        component="footer"
+        sx={{
+          mt: 4,
+          py: 2,
+          backgroundColor: 'background.paper',
+          textAlign: 'center',
+        }}
+      >
+        <Typography variant="body2" color="textSecondary">
+          Developed by Aisha Salimgereyeva, Sahrish Afzal, Maryam Nisar
+        </Typography>
+        <IconButton
+          component="a"
+          href="https://github.com/aishasalim/readup"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="GitHub"
+          sx={{ color: 'text.secondary' }}
+        >
+          <GitHubIcon />
+        </IconButton>
+      </Box>
     </>
   );
 }

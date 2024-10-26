@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
-const { clerkClient } = require('@clerk/express'); // Updated import
+const { clerkClient } = require('@clerk/express');
 const { requireAuth } = require('@clerk/express');
 
 /**
@@ -35,7 +35,7 @@ router.post('/', requireAuth(), async (req, res) => {
 
     // Fetch user data from Clerk
     try {
-      const user = await clerkClient.users.getUser(userId); // Updated code
+      const user = await clerkClient.users.getUser(userId);
       review.nickname = user.username || user.firstName || 'Anonymous';
       review.profile_image_url = user.profileImageUrl || '';
     } catch (err) {
@@ -50,6 +50,50 @@ router.post('/', requireAuth(), async (req, res) => {
     res.status(500).json({ error: 'Failed to create review.' });
   }
 });
+
+/**
+ * @route   GET /api/reviews/user/:user_id
+ * @desc    Get all reviews by a specific user
+ * @access  Public
+ */
+router.get('/user/:user_id', async (req, res) => {
+  const { user_id } = req.params;
+
+  try {
+    const result = await pool.query(
+      `SELECT * FROM reviews
+       WHERE user_id = $1
+       ORDER BY date_created DESC`,
+      [user_id]
+    );
+
+    const reviews = await Promise.all(
+      result.rows.map(async (review) => {
+        try {
+          const user = await clerkClient.users.getUser(review.user_id);
+          return {
+            ...review,
+            nickname: user.username || user.firstName || 'Anonymous',
+            profile_image_url: user.profileImageUrl || '',
+          };
+        } catch (err) {
+          console.error(`Error fetching user ${review.user_id}:`, err);
+          return {
+            ...review,
+            nickname: 'Anonymous',
+            profile_image_url: '',
+          };
+        }
+      })
+    );
+
+    res.json(reviews);
+  } catch (error) {
+    console.error('Error fetching reviews for user:', error);
+    res.status(500).json({ error: 'Failed to fetch reviews for this user.' });
+  }
+});
+
 
 /**
  * @route   GET /api/reviews/:isbn
@@ -70,7 +114,7 @@ router.get('/:isbn', async (req, res) => {
     const reviews = await Promise.all(
       result.rows.map(async (review) => {
         try {
-          const user = await clerkClient.users.getUser(review.user_id); // Updated code
+          const user = await clerkClient.users.getUser(review.user_id);
           return {
             ...review,
             nickname: user.username || user.firstName || 'Anonymous',
@@ -138,7 +182,7 @@ router.post('/:review_id/upvote', requireAuth(), async (req, res) => {
 
     // Fetch user data from Clerk
     try {
-      const user = await clerkClient.users.getUser(review.user_id); // Updated code
+      const user = await clerkClient.users.getUser(review.user_id);
       review.nickname = user.username || user.firstName || 'Anonymous';
       review.profile_image_url = user.profileImageUrl || '';
     } catch (err) {

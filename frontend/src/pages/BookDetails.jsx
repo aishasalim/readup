@@ -1,13 +1,17 @@
 // pages/BookDetails.jsx
 import React from 'react';
-import { useLocation, Link } from 'react-router-dom';
-import { Container, Typography, Grid, Card, CardContent, CardMedia, Button } from '@mui/material';
+import { useLocation, Link, useNavigate } from 'react-router-dom';
+import { Container, Typography,Box, Grid, Button } from '@mui/material';
 import Navbar from '../components/Navbar.jsx';
-import Reviews from '../components/Reviews.jsx'; // Import the Reviews component
+import Reviews from '../components/Reviews.jsx'; 
+import BookProfile from '../components/BookProfile';
+import { useAuth } from '@clerk/clerk-react';
 
 function BookDetails() {
   const location = useLocation();
-  const { book } = location.state || {}; // Destructure book from state
+  const { book } = location.state || {}; 
+  const { isSignedIn } = useAuth();
+  const navigate = useNavigate();
 
   if (!book) {
     // Handle the case where no book data is available (e.g., direct URL access)
@@ -34,51 +38,33 @@ function BookDetails() {
     <>
       <Navbar />
       <Container sx={{ pb: 4 }}>
-        {/* Modify the Grid container to align the button to the left */}
-        <Grid container justifyContent="flex-start" sx={{ my: 2 }}>
-          <Button variant="outlined" component={Link} to="/" color="primary">
-            Back to Home
-          </Button>
-        </Grid>
         <Grid container spacing={4}>
-          <Grid item xs={12} md={4}>
-            <Card>
-              {book_image && (
-                <CardMedia
-                  component="img"
-                  height="500"
-                  image={book_image}
-                  alt={title}
-                />
-              )}
-              <CardContent>
-                <Typography variant="h5" component="div">
-                  {title}
-                </Typography>
-                <Typography variant="subtitle1" color="text.secondary">
-                  By {author}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                  {description}
-                </Typography>
-                {amazon_product_url && (
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    href={amazon_product_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    sx={{ mt: 2 }}
-                  >
-                    Buy on Amazon
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
+            <BookProfile 
+              book_image={book_image}
+              title={title}
+              author={author} 
+              description={description}
+              amazon_product_url={amazon_product_url} />
+
           <Grid item xs={12} md={8}>
             {/* Integrate the Reviews component */}
-            <Reviews bookIsbn={primary_isbn13} />
+            <Typography sx={{ my: 2 }} variant="h5" gutterBottom>
+              Reviews
+            </Typography>
+
+            {/* New Review Form */}
+            {isSignedIn && (
+              <Box sx={{ mb: 2 }}>
+                <Button 
+                  variant="contained" 
+                  color="primary" 
+                  onClick={() => navigate(`/book/create/${primary_isbn13}`, { state: { book } })}>
+                  Write a Review
+                </Button>
+              </Box>
+            )}
+
+            <Reviews bookIsbn={primary_isbn13} book={book} />
           </Grid>
         </Grid>
       </Container>

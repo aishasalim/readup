@@ -21,9 +21,11 @@ const pool = require('./db'); // Ensure the path is correct
 // Routes
 const booksRouter = require('./routes/books'); // Ensure this file exists and is correctly set up
 const reviewsRouter = require('./routes/reviews');
+const listsRouter = require('./routes/lists');
 
 app.use('/api/books', booksRouter);
 app.use('/api/reviews', reviewsRouter);
+app.use('/api/lists', listsRouter);
 
 // Root Route
 app.get('/', (req, res) => {
