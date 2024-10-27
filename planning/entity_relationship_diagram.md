@@ -8,7 +8,7 @@ Reference the Creating an Entity Relationship Diagram final project guide in the
 
 ## Add the Entity Relationship Diagram
 
-[👉🏾👉🏾👉🏾https://dbdiagram.io/d/dottify-demo-671abe0a97a66db9a331a06e]
+![ERD](https://dbdiagram.io/d/dottify-demo-671abe0a97a66db9a331a06e)
 
 | Column Name | Type | Description |
 |-------------|------|-------------|
