@@ -4,14 +4,15 @@ Reference the Creating an Entity Relationship Diagram final project guide in the
 
 ## Create the List of Tables
 
-[👉🏾👉🏾👉🏾 List each table in your diagram]
+[👉🏾👉🏾👉🏾 users, reviews,cliped_books]
 
 ## Add the Entity Relationship Diagram
 
-![ERD](https://dbdiagram.io/d/dottify-demo-671abe0a97a66db9a331a06e)
+[👉🏾👉🏾👉🏾 ERD](https://dbdiagram.io/d/Web103_Capstone-Project-671e6d4597a66db9a36bce85)
 
-| Column Name | Type | Description |
+| User | Type | Description |
 |-------------|------|-------------|
 | id | integer | primary key |
 | name | text | name of the shoe model |
 | ... | ... | ... |
+
