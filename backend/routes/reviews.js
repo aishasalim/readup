@@ -264,72 +264,92 @@ router.delete('/:review_id', requireAuth(), async (req, res) => {
 });
 
 /**
- * @route   PUT /api/reviews/:review_id
- * @desc    Update a review
- * @access  Private
+ * @route   GET /api/reviews/review/:review_id
+ * @desc    Get a specific review by review_id
+ * @access  Public
  */
-router.put('/:review_id', requireAuth(), async (req, res) => {
+router.get('/review/:review_id', async (req, res) => {
   const { review_id } = req.params;
-  const { review_text, stars } = req.body;
-  const { userId } = req.auth;
-
-  // Input validation
-  if (!review_text && !stars) {
-    return res.status(400).json({ error: 'At least one of review_text or stars must be provided.' });
-  }
-
-  if (stars && (stars < 1 || stars > 5)) {
-    return res.status(400).json({ error: 'stars must be between 1 and 5.' });
-  }
 
   try {
-    // Verify that the review exists
-    const reviewResult = await pool.query(
+    const result = await pool.query(
       `SELECT * FROM reviews WHERE review_id = $1`,
       [review_id]
     );
 
-    if (reviewResult.rows.length === 0) {
+    if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Review not found.' });
     }
 
-    const review = reviewResult.rows[0];
-
-    // Check if the current user is the author
-    if (review.user_id !== userId) {
-      return res.status(403).json({ error: 'You are not authorized to edit this review.' });
-    }
-
-    // Update the review
-    const updatedReviewText = review_text || review.review_text;
-    const updatedStars = stars || review.stars;
-
-    const updateResult = await pool.query(
-      `UPDATE reviews
-       SET review_text = $1, stars = $2, date_updated = NOW()
-       WHERE review_id = $3
-       RETURNING *`,
-      [updatedReviewText, updatedStars, review_id]
-    );
-
-    const updatedReview = updateResult.rows[0];
+    const review = result.rows[0];
 
     // Fetch user data from Clerk
     try {
-      const user = await clerkClient.users.getUser(userId);
-      updatedReview.nickname = user.username || user.firstName || 'Anonymous';
-      updatedReview.profile_image_url = user.profileImageUrl || '';
+      const user = await clerkClient.users.getUser(review.user_id);
+      review.nickname = user.username || user.firstName || 'Anonymous';
+      review.profile_image_url = user.profileImageUrl || '';
     } catch (err) {
-      console.error(`Error fetching user ${userId}:`, err);
-      updatedReview.nickname = 'Anonymous';
-      updatedReview.profile_image_url = '';
+      console.error(`Error fetching user ${review.user_id}:`, err);
+      review.nickname = 'Anonymous';
+      review.profile_image_url = '';
     }
 
-    res.status(200).json(updatedReview);
+    res.json(review);
+  } catch (error) {
+    console.error('Error fetching review:', error);
+    res.status(500).json({ error: 'Failed to fetch review.' });
+  }
+});
+
+/**
+ * @route   PUT /api/reviews/:review_id
+ * @desc    Update an existing review
+ * @access  Private
+ */
+router.put('/review/:review_id', requireAuth(), async (req, res) => {
+  const { review_id } = req.params;
+  const { userId } = req.auth;
+  const { stars, review_text } = req.body;
+
+  if (!stars || !review_text) {
+    return res.status(400).json({ error: 'Stars and review text are required.' });
+  }
+
+  try {
+    // Check if the review exists and belongs to the current user
+    const reviewCheck = await pool.query(
+      `SELECT * FROM reviews WHERE review_id = $1`,
+      [review_id]
+    );
+
+    if (reviewCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Review not found.' });
+    }
+
+    const review = reviewCheck.rows[0];
+
+    if (review.user_id !== userId) {
+      return res.status(403).json({ error: 'Unauthorized to edit this review.' });
+    }
+
+    // Update the review
+    const updatedReview = await pool.query(
+      `UPDATE reviews
+       SET stars = $1,
+           review_text = $2,
+           date_modified = NOW()
+       WHERE review_id = $3
+       RETURNING *`,
+      [stars, review_text, review_id]
+    );
+
+    res.json(updatedReview.rows[0]);
   } catch (error) {
     console.error('Error updating review:', error);
     res.status(500).json({ error: 'Failed to update review.' });
   }
 });
+
+
 
 module.exports = router;

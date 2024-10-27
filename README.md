@@ -53,9 +53,9 @@ Inspired by the desire to create a community-driven platform for book lovers, th
 ## Baseline Features
 - [ ] **Backend:**
   - [x] Set up Express backend and connect to PostgreSQL database.
-  - [ ] Implement database relationships:
-    - [ ] One-to-many: Users and Book Reviews (one user can have many reviews).
-    - [ ] Many-to-many: Users and Saved Books (users can save many books, and books can be saved by many users, with a join table).
+  - [x] Implement database relationships:
+    - [X] One-to-many: Users and Book Reviews (one user can have many reviews).
+    - [X] Many-to-many: Users and Upvotes (many users can have many upvotes).
   - [ ] RESTful API with proper route naming:
     - [x] **GET**: Retrieve books, reviews, and user information.
     - [x] **POST**: Add a new review, save a book to a user’s list.
@@ -88,9 +88,9 @@ Inspired by the desire to create a community-driven platform for book lovers, th
   - [x] Integrate the **New York Times Bestsellers API** for a feed of bestselling books on the home page.
   - [x] Integrate the **Google Books API** for book search functionality, allowing users to search for books by title or author.
 
-- [ ] **Dashboard Features**:
-  - [ ] **Bestsellers Feed**: Display a list of bestselling books from the NYT API.
-  - [ ] **Top Review Books**: Show a feed of books with the most reviews from users.
+- [x] **Dashboard Features**:
+  - [X] **Bestsellers Feed**: Display a list of bestselling books from the NYT API.
+  - [X] **Top Review Books**: Show a feed of books with the most reviews from users.
   - [ ] **Saved Books**: Display the user's saved books on their dashboard.
 
 - [ ] **AI Recommendations**:
@@ -101,7 +101,7 @@ Inspired by the desire to create a community-driven platform for book lovers, th
   - [ ] Allow users to clip books to different custom lists (e.g., "Want to Read," "Read").
 
 ## Stretch Features
-- [ ] **Image Upload**: Allow users to upload a profile picture or custom book cover images (store them on a cloud service like AWS S3 or Firebase Storage).
+- [ ] **Image Upload**: Allow users to upload a profile picture or custom book cover images.
 - [ ] **Spinners/Loading States**: Show a spinner while book data or reviews are being fetched.
 - [ ] **Button States**: Disable buttons during form submission to prevent multiple submissions.
 - [ ] **Toast Messages**: Provide feedback for user actions like saving a book or submitting a review with toast notifications.

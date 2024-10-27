@@ -8,6 +8,7 @@ import CenteredContainer from './components/CenteredContainer';
 import BookDetails from './pages/BookDetails';
 import CreateReviewISBN from './pages/CreateReviewISBN';
 import CreateReviewSearch from './pages/CreateReviewSearch';
+import EditReview from './pages/EditReview';  
 import Dashboard from './pages/Dashboard';
 
 function App() {
@@ -18,8 +19,10 @@ function App() {
         <Route path="/book/:isbn" element={<BookDetails />} />
         <Route path="/book/create/:isbn" element={<CreateReviewISBN />} />
         <Route path="/create" element={<CreateReviewSearch />} />
+        <Route path="/:isbn/reviews/:reviewId/edit" element={<EditReview />} /> 
         <Route path="/dashboard" element={<Dashboard />} /> 
-
+        <Route path="/dashboard" element={<Dashboard />} /> 
+        
         {/* SignIn Route */}
         <Route
           path="/sign-in/*"

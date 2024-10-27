@@ -98,7 +98,7 @@ const Reviews = ({ bookIsbn, book }) => {
    */
   const handleEdit = (reviewId) => {
     console.log(`Edit review with ID: ${reviewId}`);
-    navigate(`/isbn/${bookIsbn}/reviews/${reviewId}/edit`, { state: { book } });
+    navigate(`/${bookIsbn}/reviews/${reviewId}/edit`, { state: { book } });
     handleMenuClose();
   };
 
@@ -214,7 +214,7 @@ const Reviews = ({ bookIsbn, book }) => {
           {reviews.map((review) => (
             <Grid item xs={12} key={review.review_id}>
               <Card>
-                <CardHeader
+              <CardHeader
                   avatar={
                     review.profile_image_url ? (
                       <Avatar src={review.profile_image_url} />
@@ -223,18 +223,21 @@ const Reviews = ({ bookIsbn, book }) => {
                     )
                   }
                   action={
-                    <IconButton
-                      aria-label="more"
-                      aria-controls={`menu-${review.review_id}`}
-                      aria-haspopup="true"
-                      onClick={(event) => handleMenuOpen(event, review.review_id)}
-                    >
-                      <MoreVertIcon />
-                    </IconButton>
+                    review.user_id === currentUserId && user ? (
+                      <IconButton
+                        aria-label="more"
+                        aria-controls={`menu-${review.review_id}`}
+                        aria-haspopup="true"
+                        onClick={(event) => handleMenuOpen(event, review.review_id)}
+                      >
+                        <MoreVertIcon />   
+                      </IconButton>
+                    ) : null
                   }
                   title={review.nickname || 'Anonymous'}
                   subheader={new Date(review.date_created).toLocaleString()}
                 />
+
                 <CardContent>
                   <Rating value={review.stars} readOnly />
                   <Typography variant="body1" sx={{ mt: 1 }}>
@@ -255,7 +258,9 @@ const Reviews = ({ bookIsbn, book }) => {
                 </Box>
 
                 {/* Menu Component */}
+                {review.user_id === currentUserId && [
                 <Menu
+                  key={`menu-${review.review_id}`} 
                   id={`menu-${review.review_id}`}
                   anchorEl={anchorEl}
                   open={Boolean(anchorEl) && selectedReviewId === review.review_id}
@@ -269,15 +274,15 @@ const Reviews = ({ bookIsbn, book }) => {
                     horizontal: 'right',
                   }}
                 >
-                  {review.user_id === currentUserId && [
                     <MenuItem key="edit" onClick={() => handleEdit(review.review_id)}>
                       Edit
-                    </MenuItem>,
+                    </MenuItem>
                     <MenuItem key="delete" onClick={() => handleDelete(review.review_id)}>
                       Delete
-                    </MenuItem>,
-                  ]}
+                    </MenuItem>
+                 
                 </Menu>
+              ]}
               </Card>
             </Grid>
           ))}
