@@ -12,9 +12,4 @@ Reference the Creating an Entity Relationship Diagram final project guide in the
 
 [👉🏾👉🏾👉🏾 ERD](https://dbdiagram.io/d/Web103_Capstone-Project-671e6d4597a66db9a36bce85)
 
-| User | Type | Description |
-|-------------|------|-------------|
-| id | integer | primary key |
-| name | text | name of the shoe model |
-| ... | ... | ... |
 
