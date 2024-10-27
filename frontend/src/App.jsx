@@ -1,28 +1,36 @@
-// App.jsx 
-
-import React from 'react';
+// App.jsx
+import React, { Suspense, lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
+import CenteredContainer from './components/CenteredContainer';
 import { SignIn, SignUp } from '@clerk/clerk-react';
-import HomePage from './pages/HomePage';
-import CenteredContainer from './components/CenteredContainer'; 
-import BookDetails from './pages/BookDetails';
-import CreateReviewISBN from './pages/CreateReviewISBN';
-import CreateReviewSearch from './pages/CreateReviewSearch';
-import EditReview from './pages/EditReview';  
-import Dashboard from './pages/Dashboard';
+import { CircularProgress } from '@mui/material';
+
+// Lazy-loaded components
+const HomePage = lazy(() => import('./pages/HomePage'));
+const BookDetails = lazy(() => import('./pages/BookDetails'));
+const CreateReviewISBN = lazy(() => import('./pages/CreateReviewISBN'));
+const CreateReviewSearch = lazy(() => import('./pages/CreateReviewSearch'));
+const EditReview = lazy(() => import('./pages/EditReview'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const NotFound = lazy(() => import('./components/NotFound'));
 
 function App() {
   return (
-    <>
+    <Suspense
+      fallback={
+        <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+          <CircularProgress />
+        </div>
+      }
+    >
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/book/:isbn" element={<BookDetails />} />
         <Route path="/book/create/:isbn" element={<CreateReviewISBN />} />
         <Route path="/create" element={<CreateReviewSearch />} />
-        <Route path="/:isbn/reviews/:reviewId/edit" element={<EditReview />} /> 
-        <Route path="/dashboard" element={<Dashboard />} /> 
-        <Route path="/dashboard" element={<Dashboard />} /> 
-        
+        <Route path="/:isbn/reviews/:reviewId/edit" element={<EditReview />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+
         {/* SignIn Route */}
         <Route
           path="/sign-in/*"
@@ -32,7 +40,7 @@ function App() {
             </CenteredContainer>
           }
         />
-        
+
         {/* SignUp Route */}
         <Route
           path="/sign-up/*"
@@ -42,29 +50,12 @@ function App() {
             </CenteredContainer>
           }
         />
+
+        {/* 404 Route */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
-    </>
+    </Suspense>
   );
 }
-
-// Wrapper components to extract URL params
-import { useParams } from 'react-router-dom';
-
-const ReviewsWrapper = () => {
-  const { isbn } = useParams();
-  return <Reviews bookIsbn={isbn} />;
-};
-
-const CreateReviewWrapper = () => {
-  const { isbn } = useParams();
-  return <CreateReview bookIsbn={isbn} />;
-};
-
-// NotFound Component
-const NotFound = () => (
-  <Typography variant="h4" align="center" sx={{ mt: 4 }}>
-    404 - Page Not Found
-  </Typography>
-);
 
 export default App;
