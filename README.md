@@ -86,7 +86,14 @@ https://github.com/user-attachments/assets/8abeece6-0c42-4457-bca8-62a2c683d9ad
   - [x] Implement hierarchically designed components with containers and presentational components:
     - [x] **Page Components**: Home, Dashboard, Book Details, Saved Books, Review Pages.
     - [x] **Component Types**: Review component, Book Card, List components.
-       
+
+
+  <img width="264" alt="Screenshot 2024-11-05 at 12 16 00 PM" src="https://github.com/user-attachments/assets/62d28e9b-bcb9-4ce6-88ad-5730a6172864">
+
+
+https://github.com/user-attachments/assets/24c1cd1c-fe4c-4dae-9a2e-e563a319c30f
+
+
 
   - [x] Redirection: Implement user redirection (e.g., after submitting a review).
   
