@@ -86,7 +86,14 @@ https://github.com/user-attachments/assets/8abeece6-0c42-4457-bca8-62a2c683d9ad
   - [x] Implement hierarchically designed components with containers and presentational components:
     - [x] **Page Components**: Home, Dashboard, Book Details, Saved Books, Review Pages.
     - [x] **Component Types**: Review component, Book Card, List components.
+       
+
   - [x] Redirection: Implement user redirection (e.g., after submitting a review).
+  
+
+https://github.com/user-attachments/assets/c16a7166-f08d-4863-a886-9501ba2d6501
+
+
   - [ ] Interactive elements: Allow users to add reviews and save books without navigating to a new page.
   - [ ] Deploy the app on Railway, ensuring all features and pages work.
 
