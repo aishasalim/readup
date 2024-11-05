@@ -9,10 +9,28 @@ This unit, be sure to complete all tasks listed below. To complete a task, place
 You will need to reference the GitHub Project Management guide in the course portal for more information about how to complete each of these steps.
 
 - [x] Create a project board associated with this repo
+
+
+<a href='https://github.com/users/aishasalim/projects/1/views/1'>LINK
+</a>
+
+
 - [x] In this repo, create GitHub milestones for each of the remaining milestones in this unit
+
+
+  ![Screenshot 2024-11-05 at 11 06 49 AM](https://github.com/user-attachments/assets/cd51088b-d10d-4568-958b-2503ad6412a4)
+
+
 - [x] In this repo, create issues for each feature on your feature list
   - [x] Make sure to add the issues to your project board and to the appropriate milestones
 - [x] Update the status of issues in your project board as you complete them
+
+![Screenshot 2024-11-05 at 11 09 03 AM](https://github.com/user-attachments/assets/e695587a-3ae0-4a7f-9365-4d31c32669e6)
+
+
+![Screenshot 2024-11-05 at 11 09 17 AM](https://github.com/user-attachments/assets/1b2d6342-fdd7-442f-956e-0da35b5f9d37)
+
+
 - [x] In `readme.md`, check off the features you have completed in this unit by adding a ✅ emoji in front of their title
   - [x] Under each feature you have completed, **include a GIF** showing feature functionality
 - [x] In this document, complete the **Reflection** section below
