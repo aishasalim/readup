@@ -12,7 +12,7 @@ Reference the Creating an Entity Relationship Diagram final project guide in the
  - email
  - avatar
 
-  **reviews **
+  **reviews**
   
 
  - review_id
@@ -22,7 +22,7 @@ Reference the Creating an Entity Relationship Diagram final project guide in the
  - upvotes
  - date_created
 
- **cliped_books **
+ **cliped_books**
  
 
  - book_id
