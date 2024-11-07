@@ -4,7 +4,33 @@ Reference the Creating an Entity Relationship Diagram final project guide in the
 
 ## Create the List of Tables
 
-[👉🏾👉🏾👉🏾 users, reviews,cliped_books]
+ **users**
+ 
+
+ - username
+ - name
+ - email
+ - avatar
+
+  **reviews **
+  
+
+ - review_id
+ - user_id
+ - books_isbn
+ - stars
+ - upvotes
+ - date_created
+
+ **cliped_books **
+ 
+
+ - book_id
+ - title
+ - user_id
+ - status
+ - created_at
+
 
 ## Add the Entity Relationship Diagram
 ![image](https://github.com/user-attachments/assets/01436e0f-9ca5-450f-bd91-e1716bcb2bbc)
