@@ -72,7 +72,12 @@ https://github.com/user-attachments/assets/4be66fc3-71c2-4900-8e15-5529144e12f3
 https://github.com/user-attachments/assets/90e8c85b-8f59-4340-bbe9-9980cef5f4ce
 
 
-  - [ ] Ability to reset the database to its default state.
+  - [X] Ability to reset the database to its default state.
+
+
+
+https://github.com/user-attachments/assets/defbb362-32f9-42be-8487-6b24cea1b6d2
+
 
 
 - [ ] **Frontend:**
