@@ -1,46 +1,63 @@
 // index.js
-require('dotenv').config(); // Load environment variables first
-const express = require('express');
-const cors = require('cors');
-const { clerkMiddleware } = require('@clerk/express');
-const morgan = require('morgan'); // Optional: For logging
+require("dotenv").config(); // Load environment variables first
+const express = require("express");
+const cors = require("cors");
+const cookieParser = require("cookie-parser");
+const { clerkMiddleware } = require("@clerk/express");
+const morgan = require("morgan"); // Optional: For logging
 
 const app = express();
 
 // Middleware
-app.use(cors()); // Enable CORS
-app.use(express.json()); // Parse JSON bodies
-app.use(morgan('dev')); // Optional: Logging
 
-// Initialize Clerk middleware
-app.use(clerkMiddleware());
+// 1. CORS Middleware
+app.use(
+  cors({
+    origin: "http://localhost:5173", // Replace with your frontend URL
+    credentials: true, // Allow cookies to be sent
+  })
+);
+
+// 2. Cookie Parser Middleware
+app.use(cookieParser()); // Parse cookies before Clerk middleware
+
+// 3. Clerk Middleware
+app.use(clerkMiddleware()); // Clerk middleware for authentication
+
+// 4. JSON Body Parser
+app.use(express.json()); // Parse JSON bodies
+
+// 5. Morgan Logging Middleware
+app.use(morgan("dev")); // Optional: Logging
 
 // Import the PostgreSQL pool
-const pool = require('./db'); // Ensure the path is correct
+const pool = require("./db");
 
 // Routes
-const booksRouter = require('./routes/books'); // Ensure this file exists and is correctly set up
-const reviewsRouter = require('./routes/reviews');
-const listsRouter = require('./routes/lists');
+const resetRoutes = require("./routes/reset");
+const booksRouter = require("./routes/books");
+const reviewsRouter = require("./routes/reviews");
+const listsRouter = require("./routes/lists");
 
-app.use('/api/books', booksRouter);
-app.use('/api/reviews', reviewsRouter);
-app.use('/api/lists', listsRouter);
+app.use("/api/reset", resetRoutes);
+app.use("/api/books", booksRouter);
+app.use("/api/reviews", reviewsRouter);
+app.use("/api/lists", listsRouter);
 
 // Root Route
-app.get('/', (req, res) => {
-  res.send('Welcome to the Book API');
+app.get("/", (req, res) => {
+  res.send("Welcome to the Book API");
 });
 
 // Handle 404 - Not Found
 app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+  res.status(404).json({ error: "Route not found" });
 });
 
 // Global Error Handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong!' });
+  res.status(500).json({ error: "Something went wrong!" });
 });
 
 // Start the server
