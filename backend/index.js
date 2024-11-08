@@ -18,17 +18,17 @@ app.use(
   })
 );
 
-// 2. Cookie Parser Middleware
-app.use(cookieParser()); // Parse cookies before Clerk middleware
+// 2. Morgan Logging Middleware
+app.use(morgan("dev")); // Logging middleware should be early to log all requests
 
-// 3. Clerk Middleware
-app.use(clerkMiddleware()); // Clerk middleware for authentication
+// 3. Cookie Parser Middleware
+app.use(cookieParser()); // Parse cookies before Clerk middleware
 
 // 4. JSON Body Parser
 app.use(express.json()); // Parse JSON bodies
 
-// 5. Morgan Logging Middleware
-app.use(morgan("dev")); // Optional: Logging
+// 5. Clerk Middleware
+app.use(clerkMiddleware()); // Clerk middleware for authentication
 
 // Import the PostgreSQL pool
 const pool = require("./db");

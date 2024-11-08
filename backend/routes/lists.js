@@ -1,95 +1,78 @@
 // routes/lists.js
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const pool = require('../db');
-const { clerkClient } = require('@clerk/express');
-const { requireAuth } = require('@clerk/express');
+const pool = require("../db");
+const { requireAuth } = require("@clerk/express");
 
 /**
  * @route   GET /api/lists
- * @desc    Get all lists and their items for the authenticated user
+ * @desc    Get all lists for the authenticated user
  * @access  Private
  */
-router.get('/', requireAuth(), async (req, res) => {
+router.get("/", requireAuth, async (req, res) => {
   const { userId } = req.auth;
-
-  const defaultLists = ['Favorite', 'Want to Read', 'Already Read'];
+  console.log("GET /api/lists called by User ID:", userId);
 
   try {
-    // Get all lists for the user
-    const listsResult = await pool.query(
-      `SELECT * FROM lists WHERE user_id = $1`,
-      [userId]
-    );
+    // Fetch lists for the user
+    let result = await pool.query(`SELECT * FROM lists WHERE user_id = $1`, [
+      userId,
+    ]);
+    let lists = result.rows;
+    console.log(`Found ${lists.length} lists for user ${userId}`);
 
-    let lists = listsResult.rows;
+    // If the user has no lists, create default lists
+    if (lists.length === 0) {
+      const defaultLists = ["Favorites", "Want to Read", "Already Read"];
+      console.log(`Creating default lists for user ${userId}:`, defaultLists);
 
-    // Check and create default lists if they don't exist
-    for (const listName of defaultLists) {
-      if (!lists.some(list => list.name === listName)) {
-        const newListResult = await pool.query(
-          `INSERT INTO lists (user_id, name, date_created)
-           VALUES ($1, $2, NOW())
-           RETURNING *`,
+      const insertQueries = defaultLists.map((listName) => {
+        return pool.query(
+          `INSERT INTO lists (user_id, name) VALUES ($1, $2) RETURNING *`,
           [userId, listName]
         );
-        lists.push(newListResult.rows[0]);
-      }
+      });
+
+      const insertResults = await Promise.all(insertQueries);
+      lists = insertResults.map((result) => result.rows[0]);
+      console.log(`Default lists created for user ${userId}:`, lists);
     }
 
-    // Fetch list items with book details
-    const listsWithItems = await Promise.all(
-      lists.map(async (list) => {
-        const itemsResult = await pool.query(
-          `SELECT li.book_isbn, li.date_added, b.title, b.author, b.book_image
-           FROM list_items li
-           JOIN books b ON li.book_isbn = b.primary_isbn13
-           WHERE li.list_id = $1`,
-          [list.list_id]
-        );
-
-        const items = itemsResult.rows;
-
-        return {
-          ...list,
-          items,
-        };
-      })
-    );
-
-    res.json(listsWithItems);
+    res.json(lists);
+    console.log(`Responded with ${lists.length} lists for user ${userId}`);
   } catch (error) {
-    console.error('Error fetching lists:', error);
-    res.status(500).json({ error: 'Failed to fetch lists.' });
+    console.error("Error fetching lists:", error);
+    res.status(500).json({ error: "Failed to fetch lists." });
   }
 });
 
 /**
  * @route   POST /api/lists
- * @desc    Create a new list
+ * @desc    Create a new list for the authenticated user
  * @access  Private
  */
-router.post('/', requireAuth(), async (req, res) => {
-  const { name } = req.body;
+router.post("/", requireAuth, async (req, res) => {
+  console.log("POST /api/lists called");
   const { userId } = req.auth;
+  console.log("User ID:", userId);
+  const { name } = req.body;
 
-  if (!name) {
-    return res.status(400).json({ error: 'List name is required.' });
+  if (!name || !name.trim()) {
+    console.log("List name is empty.");
+    return res.status(400).json({ error: "List name cannot be empty." });
   }
 
   try {
     const result = await pool.query(
-      `INSERT INTO lists (user_id, name, date_created)
-       VALUES ($1, $2, NOW())
-       RETURNING *`,
-      [userId, name]
+      `INSERT INTO lists (user_id, name) VALUES ($1, $2) RETURNING *`,
+      [userId, name.trim()]
     );
-
     const newList = result.rows[0];
+    console.log("New list created:", newList);
     res.status(201).json(newList);
   } catch (error) {
-    console.error('Error creating list:', error);
-    res.status(500).json({ error: 'Failed to create list.' });
+    console.error("Error creating new list:", error);
+    res.status(500).json({ error: "Failed to create list." });
   }
 });
 
@@ -98,86 +81,45 @@ router.post('/', requireAuth(), async (req, res) => {
  * @desc    Add a book to a list
  * @access  Private
  */
-router.post('/:list_id/items', requireAuth(), async (req, res) => {
+router.post("/:list_id/items", requireAuth, async (req, res) => {
+  const { userId } = req.auth;
   const { list_id } = req.params;
   const { book_isbn } = req.body;
-  const { userId } = req.auth;
+
+  console.log(`POST /api/lists/${list_id}/items called by User ID: ${userId}`);
 
   if (!book_isbn) {
-    return res.status(400).json({ error: 'book_isbn is required.' });
+    console.log("Book ISBN is missing.");
+    return res.status(400).json({ error: "Book ISBN is required." });
   }
 
   try {
-    // Verify that the list belongs to the user
+    // Verify the list belongs to the user
     const listResult = await pool.query(
       `SELECT * FROM lists WHERE list_id = $1 AND user_id = $2`,
       [list_id, userId]
     );
 
     if (listResult.rows.length === 0) {
-      return res.status(404).json({ error: 'List not found.' });
+      console.log(
+        `List ID ${list_id} not found or unauthorized for user ${userId}`
+      );
+      return res.status(404).json({ error: "List not found or unauthorized." });
     }
 
-    // Check if the book is already in the list
-    const existingItem = await pool.query(
-      `SELECT * FROM list_items WHERE list_id = $1 AND book_isbn = $2`,
+    // Add the book to the list
+    await pool.query(
+      `INSERT INTO list_items (list_id, book_isbn) VALUES ($1, $2)`,
       [list_id, book_isbn]
     );
 
-    if (existingItem.rows.length > 0) {
-      return res.status(400).json({ error: 'Book already in the list.' });
-    }
-
-    // Insert the book into the list
-    const result = await pool.query(
-      `INSERT INTO list_items (list_id, book_isbn, date_added)
-       VALUES ($1, $2, NOW())
-       RETURNING *`,
-      [list_id, book_isbn]
+    console.log(
+      `Book ISBN ${book_isbn} added to list ID ${list_id} for user ${userId}`
     );
-
-    const newItem = result.rows[0];
-    res.status(201).json(newItem);
+    res.status(201).json({ message: "Book added to list successfully." });
   } catch (error) {
-    console.error('Error adding book to list:', error);
-    res.status(500).json({ error: 'Failed to add book to list.' });
-  }
-});
-
-/**
- * @route   DELETE /api/lists/:list_id/items/:book_isbn
- * @desc    Remove a book from a list
- * @access  Private
- */
-router.delete('/:list_id/items/:book_isbn', requireAuth(), async (req, res) => {
-  const { list_id, book_isbn } = req.params;
-  const { userId } = req.auth;
-
-  try {
-    // Verify that the list belongs to the user
-    const listResult = await pool.query(
-      `SELECT * FROM lists WHERE list_id = $1 AND user_id = $2`,
-      [list_id, userId]
-    );
-
-    if (listResult.rows.length === 0) {
-      return res.status(404).json({ error: 'List not found.' });
-    }
-
-    // Delete the item
-    const deleteResult = await pool.query(
-      `DELETE FROM list_items WHERE list_id = $1 AND book_isbn = $2 RETURNING *`,
-      [list_id, book_isbn]
-    );
-
-    if (deleteResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Book not found in the list.' });
-    }
-
-    res.status(200).json({ message: 'Book removed from the list.' });
-  } catch (error) {
-    console.error('Error removing book from list:', error);
-    res.status(500).json({ error: 'Failed to remove book from list.' });
+    console.error("Error adding book to list:", error);
+    res.status(500).json({ error: "Failed to add book to list." });
   }
 });
 

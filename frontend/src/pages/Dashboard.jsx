@@ -1,6 +1,6 @@
 // src/components/Dashboard.jsx
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import {
   Box,
   Typography,
@@ -14,10 +14,10 @@ import {
   CardHeader,
   Avatar,
   Rating,
-} from '@mui/material';
-import { useUser } from '@clerk/clerk-react';
-import Navbar from '../components/Navbar.jsx';
-import { useNavigate } from 'react-router-dom';
+} from "@mui/material";
+import { useUser } from "@clerk/clerk-react";
+import Navbar from "../components/Navbar.jsx";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
   const { user } = useUser();
@@ -28,10 +28,34 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  const [lists, setLists] = useState([]);
+  const [listsLoading, setListsLoading] = useState(true);
+  const [listsError, setListsError] = useState(null);
+
   // Handle tab change
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };
+  // Fetch lists when the component mounts
+  useEffect(() => {
+    const fetchLists = async () => {
+      setListsLoading(true);
+      try {
+        const response = await axios.get("http://localhost:3000/api/lists", {
+          withCredentials: true, // Ensure cookies are sent
+        });
+        setLists(response.data);
+        setListsError(null);
+      } catch (err) {
+        console.error("Error fetching lists:", err);
+        setListsError("Failed to fetch reading lists.");
+      } finally {
+        setListsLoading(false);
+      }
+    };
+
+    fetchLists();
+  }, []);
 
   // Helper function to fetch book data using Google Books API
   const fetchBookData = async (isbn) => {
@@ -46,33 +70,33 @@ const Dashboard = () => {
       ) {
         const bookInfo = response.data.items[0].volumeInfo;
         return {
-          title: bookInfo.title || 'No Title',
-          author: bookInfo.authors ? bookInfo.authors.join(', ') : 'Unknown Author',
-          book_image: bookInfo.imageLinks
-            ? bookInfo.imageLinks.thumbnail
-            : '',
-          description: bookInfo.description || 'No Description Available.',
-          amazon_product_url: bookInfo.infoLink || '',
+          title: bookInfo.title || "No Title",
+          author: bookInfo.authors
+            ? bookInfo.authors.join(", ")
+            : "Unknown Author",
+          book_image: bookInfo.imageLinks ? bookInfo.imageLinks.thumbnail : "",
+          description: bookInfo.description || "No Description Available.",
+          amazon_product_url: bookInfo.infoLink || "",
           primary_isbn13: isbn,
         };
       } else {
         return {
-          title: 'No Title',
-          author: 'Unknown Author',
-          book_image: '',
-          description: 'No Description Available.',
-          amazon_product_url: '',
+          title: "No Title",
+          author: "Unknown Author",
+          book_image: "",
+          description: "No Description Available.",
+          amazon_product_url: "",
           primary_isbn13: isbn,
         };
       }
     } catch (err) {
       console.error(`Error fetching book data for ISBN ${isbn}:`, err);
       return {
-        title: 'No Title',
-        author: 'Unknown Author',
-        book_image: '',
-        description: 'No Description Available.',
-        amazon_product_url: '',
+        title: "No Title",
+        author: "Unknown Author",
+        book_image: "",
+        description: "No Description Available.",
+        amazon_product_url: "",
         primary_isbn13: isbn,
       };
     }
@@ -99,8 +123,8 @@ const Dashboard = () => {
 
         setUserReviews(reviewsWithBookData);
       } catch (err) {
-        console.error('Error fetching reviews:', err); // Log the error to understand it better
-        setError('Failed to fetch reviews.');
+        console.error("Error fetching reviews:", err); // Log the error to understand it better
+        setError("Failed to fetch reviews.");
       } finally {
         setLoading(false);
       }
@@ -121,8 +145,12 @@ const Dashboard = () => {
       <Navbar />
       <Container sx={{ py: 2 }}>
         {/* Tabs for Navigation */}
-        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-          <Tabs value={tabValue} onChange={handleTabChange} aria-label="dashboard tabs">
+        <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 2 }}>
+          <Tabs
+            value={tabValue}
+            onChange={handleTabChange}
+            aria-label="dashboard tabs"
+          >
             <Tab label="Your Reviews" />
             <Tab label="Your Reading Lists" />
           </Tabs>
@@ -130,30 +158,37 @@ const Dashboard = () => {
 
         {/* Reviews Tab */}
         {tabValue === 0 && (
-          <Box >
-            <Box sx={{ maxHeight: '79vh', overflowY: 'auto', pr: 2 }}>
+          <Box>
+            <Box sx={{ maxHeight: "79vh", overflowY: "auto", pr: 2 }}>
               {loading ? (
                 <CircularProgress />
               ) : error ? (
                 <Alert severity="error">{error}</Alert>
               ) : userReviews.length === 0 ? (
-                <Typography variant="body1">You have no reviews yet.</Typography>
+                <Typography variant="body1">
+                  You have no reviews yet.
+                </Typography>
               ) : (
                 userReviews.map((review) => (
                   <Card
                     key={review.review_id}
-                    sx={{ mb: 2, cursor: 'pointer' }}
+                    sx={{ mb: 2, cursor: "pointer" }}
                     onClick={() => handleCardClick(review.book)}
                   >
                     <CardHeader
                       avatar={
-                        <Avatar src={review.profile_image_url} alt={review.nickname} />
+                        <Avatar
+                          src={review.profile_image_url}
+                          alt={review.nickname}
+                        />
                       }
                       title={review.nickname}
                       subheader={`Reviewed ISBN: ${review.book_isbn}`}
                     />
                     <CardContent>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", mb: 1 }}
+                      >
                         {review.book.book_image && (
                           <Avatar
                             variant="square"
@@ -162,10 +197,16 @@ const Dashboard = () => {
                             sx={{ width: 56, height: 84, mr: 2 }}
                           />
                         )}
-                        <Typography variant="h6">{review.book.title}</Typography>
+                        <Typography variant="h6">
+                          {review.book.title}
+                        </Typography>
                       </Box>
                       <Rating value={review.stars} readOnly />
-                      <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+                      <Typography
+                        variant="body2"
+                        color="textSecondary"
+                        sx={{ mt: 1 }}
+                      >
                         {review.review_text}
                       </Typography>
                     </CardContent>
@@ -182,9 +223,59 @@ const Dashboard = () => {
             <Typography variant="h5" gutterBottom>
               Your Reading Lists
             </Typography>
-            <Box sx={{ maxHeight: '37em', overflowY: 'auto', pr: 2 }}>
-              {/* Your Reading Lists content goes here */}
-              <Typography variant="body1">Reading Lists functionality is coming soon!</Typography>
+            <Box sx={{ maxHeight: "79vh", overflowY: "auto", pr: 2 }}>
+              {listsLoading ? (
+                <CircularProgress />
+              ) : listsError ? (
+                <Alert severity="error">{listsError}</Alert>
+              ) : lists.length === 0 ? (
+                <Typography variant="body1">
+                  You have no reading lists yet.
+                </Typography>
+              ) : (
+                lists.map((list) => (
+                  <Card key={list.list_id} sx={{ mb: 2 }}>
+                    <CardHeader title={list.name} />
+                    <CardContent>
+                      {list.items.length === 0 ? (
+                        <Typography variant="body2">
+                          This list is empty.
+                        </Typography>
+                      ) : (
+                        list.items.map((item) => (
+                          <Box
+                            key={item.book_isbn}
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              mb: 1,
+                              cursor: "pointer",
+                            }}
+                            onClick={() => handleCardClick(item)}
+                          >
+                            {item.book_image && (
+                              <Avatar
+                                variant="square"
+                                src={item.book_image}
+                                alt={item.title}
+                                sx={{ width: 56, height: 84, mr: 2 }}
+                              />
+                            )}
+                            <Box>
+                              <Typography variant="subtitle1">
+                                {item.title}
+                              </Typography>
+                              <Typography variant="body2" color="textSecondary">
+                                {item.author}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        ))
+                      )}
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </Box>
           </Box>
         )}
