@@ -94,7 +94,7 @@ https://github.com/user-attachments/assets/0a170db2-be50-41d8-9476-d7c21f9c3ab7
 - [x] **Dashboard Features**:
   - [x] **Bestsellers Feed**: Display a list of bestselling books from the NYT API.
   - [x] **Top Review Books**: Show a feed of books with the most reviews from users.
-  - [ ] **Saved Books**: Display the user's saved books on their dashboard.
+  - [x] **Saved Books**: Display the user's saved books on their dashboard.
 
 https://github.com/user-attachments/assets/d76dfdb9-b3b0-4efc-84e9-ef9f9f62c0e2
 
@@ -103,8 +103,8 @@ https://github.com/user-attachments/assets/d76dfdb9-b3b0-4efc-84e9-ef9f9f62c0e2
   - [ ] Based on the user’s reading history, generate book recommendations using AI.
   - [ ] Display AI-recommended books on the user’s dashboard.
 
-- [ ] **Clipped Books**:
-  - [ ] Allow users to clip books to different custom lists (e.g., "Want to Read," "Read").
+- [x] **Clipped Books**:
+  - [x] Allow users to clip books to different custom lists (e.g., "Want to Read," "Read").
 
 ## Stretch Features
 
@@ -116,8 +116,8 @@ https://github.com/user-attachments/assets/f53b924a-3aef-4e98-a88f-32d712a2a389
 
 https://github.com/user-attachments/assets/075d3484-ddb8-4112-b3bb-2a1fccc27ff6
 
-- [ ] **Button States**: Disable buttons during form submission to prevent multiple submissions.
-- [ ] **Toast Messages**: Provide feedback for user actions like saving a book or submitting a review with toast notifications.
+- [x] **Button States**: Disable buttons during form submission to prevent multiple submissions.
+- [x] **Toast Messages**: Provide feedback for user actions like saving a book or submitting a review with toast notifications.
 
 ## Installation Instructions
 
