@@ -86,25 +86,19 @@ function BookDetails() {
     try {
       const token = await getToken();
 
-      const bookData = {
-        book_isbn: book.primary_isbn13,
-        book_name: book.title,
-        book_cover_photo: book.book_image,
-        book_description: book.description,
-      };
+      const bookData = book; // Assuming 'book' is the full book object in your component
 
       await axios.post(
         `http://localhost:3000/api/lists/${listId}/items`,
-        bookData,
+        { book: bookData },
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
-      setOpen(false);
-      const addedList = lists.find((l) => l.id === listId);
-      showSnackbar(`Book added to ${addedList.name}!`, "success");
+
+      showSnackbar(`Book added to the list!`, "success");
     } catch (err) {
       console.error("Error adding book to list:", err);
       if (err.response && err.response.status === 409) {

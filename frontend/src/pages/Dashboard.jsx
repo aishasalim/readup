@@ -15,16 +15,23 @@ import {
   CardHeader,
   Avatar,
   Rating,
-  Snackbar, // Import Snackbar
-  Alert as MuiAlert, // Import Alert
+  Snackbar,
+  Alert as MuiAlert,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Select,
+  MenuItem,
 } from "@mui/material";
-import { useUser, useAuth } from "@clerk/clerk-react"; // Import useAuth
+import { useUser, useAuth } from "@clerk/clerk-react";
 import Navbar from "../components/Navbar.jsx";
 import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
   const { user } = useUser();
-  const { getToken } = useAuth(); // Destructure getToken from useAuth
+  const { getToken } = useAuth();
   const [tabValue, setTabValue] = useState(0);
   const [reviews, setReviews] = useState([]);
   const [userReviews, setUserReviews] = useState([]); // Combined reviews with book data
@@ -40,6 +47,12 @@ const Dashboard = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState("success"); // 'success', 'error', 'warning', 'info'
+
+  // State for move dialog
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [selectedBook, setSelectedBook] = useState(null);
+  const [currentListId, setCurrentListId] = useState(null);
+  const [targetListId, setTargetListId] = useState("");
 
   // Handle tab change
   const handleTabChange = (event, newValue) => {
@@ -66,16 +79,16 @@ const Dashboard = () => {
     const fetchLists = async () => {
       setListsLoading(true);
       try {
-        const token = await getToken(); // Correctly get the token
+        const token = await getToken();
 
         const response = await axios.get("http://localhost:3000/api/lists", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-          withCredentials: true, // Ensure cookies are sent
+          withCredentials: true,
         });
         setLists(response.data);
-        console.log("Fetched Lists:", response.data); // Debug log
+        console.log("Fetched Lists:", response.data);
         setListsError(null);
       } catch (err) {
         console.error("Error fetching lists:", err);
@@ -87,10 +100,9 @@ const Dashboard = () => {
     };
 
     if (user?.id) {
-      // Ensure user is available
       fetchLists();
     }
-  }, [user, getToken]); // Add getToken as a dependency
+  }, [user, getToken]);
 
   // Helper function to fetch book data using Google Books API
   const fetchBookData = async (isbn) => {
@@ -142,7 +154,7 @@ const Dashboard = () => {
     const fetchReviews = async () => {
       setLoading(true);
       try {
-        const token = await getToken(); // Correctly get the token
+        const token = await getToken();
 
         const response = await axios.get(
           `http://localhost:3000/api/reviews/user/${user.id}`,
@@ -165,7 +177,7 @@ const Dashboard = () => {
 
         setUserReviews(reviewsWithBookData);
       } catch (err) {
-        console.error("Error fetching reviews:", err); // Log the error to understand it better
+        console.error("Error fetching reviews:", err);
         setError("Failed to fetch reviews.");
         showSnackbar("Failed to fetch reviews.", "error");
       } finally {
@@ -174,14 +186,100 @@ const Dashboard = () => {
     };
 
     if (user?.id) {
-      // Ensure user is available
       fetchReviews();
     }
-  }, [user, getToken]); // Add getToken as a dependency
+  }, [user, getToken]);
 
   // Handler for navigating to the book detail page
   const handleCardClick = (book) => {
-    navigate(`/book/${book.primary_isbn13}`, { state: { book } });
+    navigate(`/book/${book.primary_isbn13 || book.book_isbn}`, {
+      state: { book },
+    });
+  };
+
+  // Handle deleting a book from a list
+  const handleDeleteFromList = async (listId, bookIsbn) => {
+    try {
+      const token = await getToken();
+
+      await axios.delete(
+        `http://localhost:3000/api/lists/${listId}/items/${bookIsbn}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Update the state to remove the book from the list
+      setLists((prevLists) =>
+        prevLists.map((list) =>
+          list.id === listId
+            ? {
+                ...list,
+                items: list.items.filter((item) => item.book_isbn !== bookIsbn),
+              }
+            : list
+        )
+      );
+
+      showSnackbar("Book deleted from the list.", "success");
+    } catch (err) {
+      console.error("Error deleting book from list:", err);
+      showSnackbar("Failed to delete book from list.", "error");
+    }
+  };
+
+  // Handle moving a book to another list
+  const handleMoveToList = (listId, book) => {
+    setCurrentListId(listId);
+    setSelectedBook(book);
+    setTargetListId("");
+    setMoveDialogOpen(true);
+  };
+
+  const handleConfirmMove = async () => {
+    try {
+      const token = await getToken();
+
+      await axios.put(
+        `http://localhost:3000/api/lists/${currentListId}/items/${selectedBook.book_isbn}/move/${targetListId}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Update the lists state
+      setLists((prevLists) => {
+        return prevLists.map((list) => {
+          if (list.id === currentListId) {
+            // Remove the book from the current list
+            return {
+              ...list,
+              items: list.items.filter(
+                (item) => item.book_isbn !== selectedBook.book_isbn
+              ),
+            };
+          } else if (list.id === targetListId) {
+            // Add the book to the target list
+            return {
+              ...list,
+              items: [...list.items, selectedBook],
+            };
+          }
+          return list;
+        });
+      });
+
+      showSnackbar("Book moved to the new list.", "success");
+      setMoveDialogOpen(false);
+    } catch (err) {
+      console.error("Error moving book to another list:", err);
+      showSnackbar("Failed to move book to the new list.", "error");
+    }
   };
 
   return (
@@ -293,25 +391,62 @@ const Dashboard = () => {
                               display: "flex",
                               alignItems: "center",
                               mb: 1,
-                              cursor: "pointer",
                             }}
-                            onClick={() => handleCardClick(item)}
                           >
-                            {item.book_cover_photo && (
-                              <Avatar
-                                variant="square"
-                                src={item.book_cover_photo}
-                                alt={item.book_name}
-                                sx={{ width: 56, height: 84, mr: 2 }}
-                              />
-                            )}
-                            <Box>
+                            <Box
+                              onClick={() => handleCardClick(item)}
+                              sx={{ flexGrow: 1, cursor: "pointer" }}
+                            >
+                              {item.book_cover_photo && (
+                                <Avatar
+                                  variant="square"
+                                  src={item.book_cover_photo}
+                                  alt={item.book_name}
+                                  sx={{ width: 56, height: 84, mr: 2 }}
+                                />
+                              )}
                               <Typography variant="subtitle1">
                                 {item.book_name}
                               </Typography>
                               <Typography variant="body2" color="textSecondary">
+                                Book ISBN: {item.book_isbn}
+                              </Typography>
+                              <Typography variant="body2" color="textSecondary">
                                 {item.book_description}
                               </Typography>
+                            </Box>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                ml: "auto",
+                              }}
+                            >
+                              {/* Delete Button */}
+                              <Button
+                                variant="outlined"
+                                color="error"
+                                size="small"
+                                onClick={(e) => {
+                                  e.stopPropagation(); // Prevent triggering handleCardClick
+                                  handleDeleteFromList(list.id, item.book_isbn);
+                                }}
+                                sx={{ mb: 1 }}
+                              >
+                                Delete
+                              </Button>
+                              {/* Move Button */}
+                              <Button
+                                variant="outlined"
+                                color="primary"
+                                size="small"
+                                onClick={(e) => {
+                                  e.stopPropagation(); // Prevent triggering handleCardClick
+                                  handleMoveToList(list.id, item);
+                                }}
+                              >
+                                Move
+                              </Button>
                             </Box>
                           </Box>
                         ))
@@ -328,6 +463,44 @@ const Dashboard = () => {
           </Box>
         )}
       </Container>
+
+      {/* Move Book Dialog */}
+      <Dialog
+        open={moveDialogOpen}
+        onClose={() => setMoveDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Move Book to Another List</DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            Select the list to move "{selectedBook?.book_name}" to:
+          </Typography>
+          <Select
+            value={targetListId}
+            onChange={(e) => setTargetListId(e.target.value)}
+            fullWidth
+          >
+            {lists
+              .filter((list) => list.id !== currentListId)
+              .map((list) => (
+                <MenuItem key={list.id} value={list.id}>
+                  {list.name}
+                </MenuItem>
+              ))}
+          </Select>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setMoveDialogOpen(false)}>Cancel</Button>
+          <Button
+            onClick={handleConfirmMove}
+            color="primary"
+            disabled={!targetListId}
+          >
+            Move
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Snackbar for notifications */}
       <Snackbar
