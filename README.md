@@ -72,9 +72,17 @@ https://github.com/user-attachments/assets/c16a7166-f08d-4863-a886-9501ba2d6501
 ## Custom Features
 
 - [x] **Error Handling**: Implement error messages for actions like failed API calls or invalid form submissions.
+    
+
+https://github.com/user-attachments/assets/ba2dfa6c-2680-417b-a646-978584a7928d
+
+
 - [ ] **One-to-One Database Relationship**: Link each user to a profile that stores their preferences and AI recommendation data.
 - [x] **Data Validation**: Validate user input (e.g., review text) before updating the database.
-- [ ] **Filtering and Sorting**: Allow users to filter books by genres, ratings, or bestsellers.
+    
+
+https://github.com/user-attachments/assets/2b40b61e-975a-43c2-8b3e-326bba60743d
+
 
 ## Additional Custom Features
 
@@ -95,6 +103,10 @@ https://github.com/user-attachments/assets/0a170db2-be50-41d8-9476-d7c21f9c3ab7
   - [x] **Top Review Books**: Show a feed of books with the most reviews from users.
   - [x] **Saved Books**: Display the user's saved books on their dashboard.
 
+
+https://github.com/user-attachments/assets/77563a21-a56f-442a-b06f-5fad914d0b90
+
+
 https://github.com/user-attachments/assets/d76dfdb9-b3b0-4efc-84e9-ef9f9f62c0e2
 
 - [ ] **AI Recommendations**:
@@ -104,6 +116,11 @@ https://github.com/user-attachments/assets/d76dfdb9-b3b0-4efc-84e9-ef9f9f62c0e2
 
 - [x] **Clipped Books**:
   - [x] Allow users to clip books to different custom lists (e.g., "Want to Read," "Read").
+
+
+https://github.com/user-attachments/assets/656bb053-2050-4f2a-ad45-e156f97c7fe1
+
+
 
 ## Stretch Features
 
@@ -117,6 +134,12 @@ https://github.com/user-attachments/assets/075d3484-ddb8-4112-b3bb-2a1fccc27ff6
 
 - [x] **Button States**: Disable buttons during form submission to prevent multiple submissions.
 - [x] **Toast Messages**: Provide feedback for user actions like saving a book or submitting a review with toast notifications.
+
+
+https://github.com/user-attachments/assets/7ebc1978-2d2e-496f-b5fa-5c1168624197
+
+
+
 
 ## Installation Instructions
 
