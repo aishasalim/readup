@@ -71,10 +71,9 @@ https://github.com/user-attachments/assets/c16a7166-f08d-4863-a886-9501ba2d6501
 
 ## Custom Features
 
-- [ ] **Error Handling**: Implement error messages for actions like failed API calls or invalid form submissions.
+- [x] **Error Handling**: Implement error messages for actions like failed API calls or invalid form submissions.
 - [ ] **One-to-One Database Relationship**: Link each user to a profile that stores their preferences and AI recommendation data.
-- [ ] **Modal or Slide-out Pane**: Use a modal for book details or for submitting reviews.
-- [ ] **Data Validation**: Validate user input (e.g., review text) before updating the database.
+- [x] **Data Validation**: Validate user input (e.g., review text) before updating the database.
 - [ ] **Filtering and Sorting**: Allow users to filter books by genres, ratings, or bestsellers.
 
 ## Additional Custom Features
