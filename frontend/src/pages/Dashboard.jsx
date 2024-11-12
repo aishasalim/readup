@@ -1,4 +1,5 @@
 // src/components/Dashboard.jsx
+
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
@@ -14,13 +15,16 @@ import {
   CardHeader,
   Avatar,
   Rating,
+  Snackbar, // Import Snackbar
+  Alert as MuiAlert, // Import Alert
 } from "@mui/material";
-import { useUser } from "@clerk/clerk-react";
+import { useUser, useAuth } from "@clerk/clerk-react"; // Import useAuth
 import Navbar from "../components/Navbar.jsx";
 import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
   const { user } = useUser();
+  const { getToken } = useAuth(); // Destructure getToken from useAuth
   const [tabValue, setTabValue] = useState(0);
   const [reviews, setReviews] = useState([]);
   const [userReviews, setUserReviews] = useState([]); // Combined reviews with book data
@@ -32,30 +36,61 @@ const Dashboard = () => {
   const [listsLoading, setListsLoading] = useState(true);
   const [listsError, setListsError] = useState(null);
 
+  // State variables for Snackbar
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState("success"); // 'success', 'error', 'warning', 'info'
+
   // Handle tab change
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };
+
+  // Handler to close the Snackbar
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setSnackbarOpen(false);
+  };
+
+  // Function to show the Snackbar
+  const showSnackbar = (message, severity = "success") => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
+  };
+
   // Fetch lists when the component mounts
   useEffect(() => {
     const fetchLists = async () => {
       setListsLoading(true);
       try {
+        const token = await getToken(); // Correctly get the token
+
         const response = await axios.get("http://localhost:3000/api/lists", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
           withCredentials: true, // Ensure cookies are sent
         });
         setLists(response.data);
+        console.log("Fetched Lists:", response.data); // Debug log
         setListsError(null);
       } catch (err) {
         console.error("Error fetching lists:", err);
         setListsError("Failed to fetch reading lists.");
+        showSnackbar("Failed to fetch reading lists.", "error");
       } finally {
         setListsLoading(false);
       }
     };
 
-    fetchLists();
-  }, []);
+    if (user?.id) {
+      // Ensure user is available
+      fetchLists();
+    }
+  }, [user, getToken]); // Add getToken as a dependency
 
   // Helper function to fetch book data using Google Books API
   const fetchBookData = async (isbn) => {
@@ -102,13 +137,20 @@ const Dashboard = () => {
     }
   };
 
+  // Fetch user reviews when component mounts
   useEffect(() => {
-    // Fetch user reviews when component mounts
     const fetchReviews = async () => {
       setLoading(true);
       try {
+        const token = await getToken(); // Correctly get the token
+
         const response = await axios.get(
-          `http://localhost:3000/api/reviews/user/${user.id}`
+          `http://localhost:3000/api/reviews/user/${user.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
         setReviews(response.data);
         setError(null);
@@ -125,15 +167,17 @@ const Dashboard = () => {
       } catch (err) {
         console.error("Error fetching reviews:", err); // Log the error to understand it better
         setError("Failed to fetch reviews.");
+        showSnackbar("Failed to fetch reviews.", "error");
       } finally {
         setLoading(false);
       }
     };
 
     if (user?.id) {
+      // Ensure user is available
       fetchReviews();
     }
-  }, [user]);
+  }, [user, getToken]); // Add getToken as a dependency
 
   // Handler for navigating to the book detail page
   const handleCardClick = (book) => {
@@ -234,14 +278,14 @@ const Dashboard = () => {
                 </Typography>
               ) : (
                 lists.map((list) => (
-                  <Card key={list.list_id} sx={{ mb: 2 }}>
+                  <Card key={list.id} sx={{ mb: 2 }}>
                     <CardHeader title={list.name} />
                     <CardContent>
-                      {list.items.length === 0 ? (
+                      {Array.isArray(list.items) && list.items.length === 0 ? (
                         <Typography variant="body2">
                           This list is empty.
                         </Typography>
-                      ) : (
+                      ) : Array.isArray(list.items) ? (
                         list.items.map((item) => (
                           <Box
                             key={item.book_isbn}
@@ -253,24 +297,28 @@ const Dashboard = () => {
                             }}
                             onClick={() => handleCardClick(item)}
                           >
-                            {item.book_image && (
+                            {item.book_cover_photo && (
                               <Avatar
                                 variant="square"
-                                src={item.book_image}
-                                alt={item.title}
+                                src={item.book_cover_photo}
+                                alt={item.book_name}
                                 sx={{ width: 56, height: 84, mr: 2 }}
                               />
                             )}
                             <Box>
                               <Typography variant="subtitle1">
-                                {item.title}
+                                {item.book_name}
                               </Typography>
                               <Typography variant="body2" color="textSecondary">
-                                {item.author}
+                                {item.book_description}
                               </Typography>
                             </Box>
                           </Box>
                         ))
+                      ) : (
+                        <Typography variant="body2" color="error">
+                          Unable to load books for this list.
+                        </Typography>
                       )}
                     </CardContent>
                   </Card>
@@ -280,6 +328,24 @@ const Dashboard = () => {
           </Box>
         )}
       </Container>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <MuiAlert
+          onClose={handleCloseSnackbar}
+          severity={snackbarSeverity}
+          sx={{ width: "100%" }}
+          elevation={6}
+          variant="filled"
+        >
+          {snackbarMessage}
+        </MuiAlert>
+      </Snackbar>
     </>
   );
 };

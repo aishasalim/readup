@@ -1,125 +1,118 @@
-// routes/lists.js
 const express = require("express");
 const router = express.Router();
-const pool = require("../db");
 const { requireAuth } = require("@clerk/express");
+const db = require("../db");
 
-/**
- * @route   GET /api/lists
- * @desc    Get all lists for the authenticated user
- * @access  Private
- */
-router.get("/", requireAuth, async (req, res) => {
-  const { userId } = req.auth;
-  console.log("GET /api/lists called by User ID:", userId);
+// Helper function to ensure default lists exist for a user
+async function ensureDefaultLists(userId) {
+  // Check if the user has any lists
+  const listsResult = await db.query("SELECT * FROM lists WHERE user_id = $1", [
+    userId,
+  ]);
+
+  let lists = listsResult.rows;
+
+  if (lists.length === 0) {
+    // User has no lists, create default lists
+    const defaultLists = ["Favorite", "Reading", "Past"];
+
+    const insertPromises = defaultLists.map((listName) =>
+      db.query(
+        "INSERT INTO lists (user_id, name) VALUES ($1, $2) RETURNING *",
+        [userId, listName]
+      )
+    );
+
+    const insertResults = await Promise.all(insertPromises);
+
+    // Collect the newly created lists
+    lists = insertResults.map((result) => result.rows[0]);
+  }
+
+  return lists;
+}
+
+// Get all lists for the authenticated user, including their books
+router.get("/", requireAuth(), async (req, res) => {
+  const userId = req.auth.userId;
+  console.log(`Fetching lists for user: ${userId}`); // Debug log
 
   try {
-    // Fetch lists for the user
-    let result = await pool.query(`SELECT * FROM lists WHERE user_id = $1`, [
-      userId,
-    ]);
-    let lists = result.rows;
-    console.log(`Found ${lists.length} lists for user ${userId}`);
+    const lists = await ensureDefaultLists(userId);
 
-    // If the user has no lists, create default lists
-    if (lists.length === 0) {
-      const defaultLists = ["Favorites", "Want to Read", "Already Read"];
-      console.log(`Creating default lists for user ${userId}:`, defaultLists);
-
-      const insertQueries = defaultLists.map((listName) => {
-        return pool.query(
-          `INSERT INTO lists (user_id, name) VALUES ($1, $2) RETURNING *`,
-          [userId, listName]
+    // Fetch books for each list
+    const listsWithBooks = await Promise.all(
+      lists.map(async (list) => {
+        const booksResult = await db.query(
+          "SELECT * FROM user_book_lists WHERE user_id = $1 AND list_id = $2",
+          [userId, list.id]
         );
-      });
+        return {
+          ...list,
+          items: booksResult.rows, // Assign books to 'items'
+        };
+      })
+    );
 
-      const insertResults = await Promise.all(insertQueries);
-      lists = insertResults.map((result) => result.rows[0]);
-      console.log(`Default lists created for user ${userId}:`, lists);
-    }
-
-    res.json(lists);
-    console.log(`Responded with ${lists.length} lists for user ${userId}`);
-  } catch (error) {
-    console.error("Error fetching lists:", error);
-    res.status(500).json({ error: "Failed to fetch lists." });
+    res.json(listsWithBooks);
+  } catch (err) {
+    console.error("Error fetching lists:", err);
+    res.status(500).json({ error: "Failed to fetch lists" });
   }
 });
 
-/**
- * @route   POST /api/lists
- * @desc    Create a new list for the authenticated user
- * @access  Private
- */
-router.post("/", requireAuth, async (req, res) => {
-  console.log("POST /api/lists called");
-  const { userId } = req.auth;
-  console.log("User ID:", userId);
+// Create a new list
+router.post("/", requireAuth(), async (req, res) => {
+  const userId = req.auth.userId;
   const { name } = req.body;
+  console.log(`Creating new list for user: ${userId} with name: ${name}`); // Debug log
 
-  if (!name || !name.trim()) {
-    console.log("List name is empty.");
-    return res.status(400).json({ error: "List name cannot be empty." });
+  if (!name) {
+    return res.status(400).json({ error: "List name is required" });
   }
 
   try {
-    const result = await pool.query(
-      `INSERT INTO lists (user_id, name) VALUES ($1, $2) RETURNING *`,
-      [userId, name.trim()]
+    const result = await db.query(
+      "INSERT INTO lists (user_id, name) VALUES ($1, $2) RETURNING *",
+      [userId, name]
     );
-    const newList = result.rows[0];
-    console.log("New list created:", newList);
-    res.status(201).json(newList);
-  } catch (error) {
-    console.error("Error creating new list:", error);
-    res.status(500).json({ error: "Failed to create list." });
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error("Error creating list:", err);
+    res.status(500).json({ error: "Failed to create list" });
   }
 });
 
-/**
- * @route   POST /api/lists/:list_id/items
- * @desc    Add a book to a list
- * @access  Private
- */
-router.post("/:list_id/items", requireAuth, async (req, res) => {
-  const { userId } = req.auth;
-  const { list_id } = req.params;
-  const { book_isbn } = req.body;
-
-  console.log(`POST /api/lists/${list_id}/items called by User ID: ${userId}`);
-
-  if (!book_isbn) {
-    console.log("Book ISBN is missing.");
-    return res.status(400).json({ error: "Book ISBN is required." });
-  }
+// Add a book to a list
+router.post("/:listId/items", requireAuth(), async (req, res) => {
+  const userId = req.auth.userId;
+  const listId = req.params.listId;
+  const { book_isbn, book_name, book_cover_photo, book_description } = req.body;
+  console.log(`Adding book to list: ${listId} for user: ${userId}`); // Debug log
 
   try {
-    // Verify the list belongs to the user
-    const listResult = await pool.query(
-      `SELECT * FROM lists WHERE list_id = $1 AND user_id = $2`,
-      [list_id, userId]
+    const listResult = await db.query(
+      "SELECT * FROM lists WHERE id = $1 AND user_id = $2",
+      [listId, userId]
     );
-
     if (listResult.rows.length === 0) {
-      console.log(
-        `List ID ${list_id} not found or unauthorized for user ${userId}`
-      );
-      return res.status(404).json({ error: "List not found or unauthorized." });
+      return res.status(404).json({ error: "List not found" });
     }
 
-    // Add the book to the list
-    await pool.query(
-      `INSERT INTO list_items (list_id, book_isbn) VALUES ($1, $2)`,
-      [list_id, book_isbn]
+    await db.query(
+      "INSERT INTO user_book_lists (user_id, list_id, book_isbn, book_name, book_cover_photo, book_description) VALUES ($1, $2, $3, $4, $5, $6)",
+      [userId, listId, book_isbn, book_name, book_cover_photo, book_description]
     );
 
-    console.log(
-      `Book ISBN ${book_isbn} added to list ID ${list_id} for user ${userId}`
-    );
-    res.status(201).json({ message: "Book added to list successfully." });
-  } catch (error) {
-    console.error("Error adding book to list:", error);
-    res.status(500).json({ error: "Failed to add book to list." });
+    res.status(201).json({ message: "Book added to list" });
+  } catch (err) {
+    console.error("Error adding book to list:", err);
+    if (err.code === "23505") {
+      // PostgreSQL unique_violation error code
+      res.status(409).json({ error: "The book is already in the list." });
+    } else {
+      res.status(500).json({ error: "Failed to add book to list" });
+    }
   }
 });
 

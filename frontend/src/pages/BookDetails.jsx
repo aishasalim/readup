@@ -1,5 +1,6 @@
 // pages/BookDetails.jsx
-import React, { useState, useEffect } from "react";
+
+import React, { useState } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import {
   Container,
@@ -14,9 +15,9 @@ import {
   List,
   ListItem,
   ListItemText,
-  Alert,
   TextField,
-  CircularProgress,
+  Snackbar, // Import Snackbar
+  Alert as MuiAlert, // Import Alert
 } from "@mui/material";
 import axios from "axios";
 import Navbar from "../components/Navbar.jsx";
@@ -27,13 +28,13 @@ import { useAuth } from "@clerk/clerk-react";
 function BookDetails() {
   const location = useLocation();
   const { book } = location.state || {};
-  const { isSignedIn, getToken } = useAuth(); // Include getToken
+  const { isSignedIn, getToken } = useAuth();
   const navigate = useNavigate();
 
   // State variables for the "Add to List" dialog
   const [open, setOpen] = useState(false);
   const [lists, setLists] = useState([]);
-  const [loadingLists, setLoadingLists] = useState(true);
+  const [loadingLists, setLoadingLists] = useState(false);
   const [error, setError] = useState(null);
 
   // State variables for creating a new list
@@ -41,6 +42,11 @@ function BookDetails() {
   const [newListName, setNewListName] = useState("");
   const [creatingListError, setCreatingListError] = useState(null);
   const [creatingListLoading, setCreatingListLoading] = useState(false);
+
+  // State variables for Snackbar
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState("success"); // 'success', 'error', 'warning', 'info'
 
   if (!book) {
     // Handle the case where no book data is available (e.g., direct URL access)
@@ -61,46 +67,78 @@ function BookDetails() {
     );
   }
 
+  // Handler to close the Snackbar
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setSnackbarOpen(false);
+  };
+
+  // Function to show the Snackbar
+  const showSnackbar = (message, severity = "success") => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
+  };
+
   const handleAddToList = async (listId) => {
     try {
+      const token = await getToken();
+
+      const bookData = {
+        book_isbn: book.primary_isbn13,
+        book_name: book.title,
+        book_cover_photo: book.book_image,
+        book_description: book.description,
+      };
+
       await axios.post(
         `http://localhost:3000/api/lists/${listId}/items`,
-        { book_isbn: book.primary_isbn13 },
-        { withCredentials: true }
+        bookData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       setOpen(false);
-      alert(`Book added to ${lists.find((l) => l.list_id === listId).name}!`);
+      const addedList = lists.find((l) => l.id === listId);
+      showSnackbar(`Book added to ${addedList.name}!`, "success");
     } catch (err) {
       console.error("Error adding book to list:", err);
-      alert("Failed to add book to list.");
+      if (err.response && err.response.status === 409) {
+        showSnackbar("The book is already in the list.", "warning");
+      } else {
+        showSnackbar("Failed to add book to list.", "error");
+      }
     }
   };
 
   const handleClickOpen = async () => {
     if (!isSignedIn) {
-      alert("Please sign in to add books to your lists.");
+      showSnackbar("Please sign in to add books to your lists.", "warning");
       navigate("/sign-in");
       return;
     }
-
-    setOpen(true);
-    setLoadingLists(true);
     try {
-      const token = await getToken(); // Obtain the session token
+      setOpen(true);
+      setLoadingLists(true);
+      const token = await getToken();
 
       const response = await axios.get("http://localhost:3000/api/lists", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-        withCredentials: true,
       });
+
       setLists(response.data);
-      setError(null);
+      setLoadingLists(false);
     } catch (err) {
       console.error("Error fetching lists:", err);
-      setError("Failed to fetch lists.");
-    } finally {
+      setError("Failed to load lists.");
       setLoadingLists(false);
+      showSnackbar("Failed to load lists.", "error");
     }
   };
 
@@ -111,18 +149,15 @@ function BookDetails() {
     setCreatingListError(null);
   };
 
-  const handleCreateNewList = async () => {
-    if (!newListName.trim()) {
+  const handleCreateList = async (e) => {
+    e.preventDefault();
+    if (!newListName) {
       setCreatingListError("List name cannot be empty.");
       return;
     }
-
-    setCreatingListLoading(true);
-    setCreatingListError(null);
-
     try {
-      const token = await getToken(); // Obtain the session token
-
+      setCreatingListLoading(true);
+      const token = await getToken();
       const response = await axios.post(
         "http://localhost:3000/api/lists",
         { name: newListName },
@@ -130,26 +165,23 @@ function BookDetails() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-          withCredentials: true,
         }
       );
-
-      const newList = response.data;
-
-      // Update the lists state with the new list
-      setLists([...lists, newList]);
-
-      // Reset new list creation state
+      // Add the new list to the lists
+      setLists([...lists, response.data]);
       setCreatingList(false);
       setNewListName("");
-
-      // Optionally, automatically add the book to the new list
-      handleAddToList(newList.list_id);
-    } catch (err) {
-      console.error("Error creating new list:", err);
-      setCreatingListError("Failed to create list.");
-    } finally {
+      setCreatingListError(null);
       setCreatingListLoading(false);
+      showSnackbar(
+        `List "${response.data.name}" created successfully!`,
+        "success"
+      );
+    } catch (err) {
+      console.error("Error creating list:", err);
+      setCreatingListError("Failed to create list.");
+      setCreatingListLoading(false);
+      showSnackbar("Failed to create list.", "error");
     }
   };
 
@@ -176,7 +208,6 @@ function BookDetails() {
           />
 
           <Grid item xs={12} md={8}>
-            {/* Integrate the Reviews component */}
             <Typography sx={{ my: 2 }} variant="h5" gutterBottom>
               Reviews
             </Typography>
@@ -212,85 +243,85 @@ function BookDetails() {
 
         {/* Add to List Dialog */}
         <Dialog open={open} onClose={handleClose}>
-          <DialogTitle>
-            {!creatingList ? "Select a List" : "Create a New List"}
-          </DialogTitle>
+          <DialogTitle>Add to List</DialogTitle>
           <DialogContent>
             {loadingLists ? (
-              <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
-                <CircularProgress />
-              </Box>
+              <Typography variant="body1">Loading lists...</Typography>
             ) : error ? (
-              <Alert severity="error">{error}</Alert>
+              <Typography variant="body1" color="error">
+                {error}
+              </Typography>
             ) : (
               <>
-                {!creatingList ? (
-                  <>
-                    <List>
-                      {lists.length > 0 ? (
-                        lists.map((list) => (
-                          <ListItem
-                            button
-                            onClick={() => handleAddToList(list.list_id)}
-                            key={list.list_id}
-                          >
-                            <ListItemText primary={list.name} />
-                          </ListItem>
-                        ))
-                      ) : (
-                        <Typography>No lists found.</Typography>
-                      )}
-                    </List>
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                      fullWidth
-                      sx={{ mt: 2 }}
-                      onClick={() => setCreatingList(true)}
+                <List>
+                  {lists.map((list) => (
+                    <ListItem
+                      button
+                      key={list.id}
+                      onClick={() => handleAddToList(list.id)}
                     >
-                      Create New List
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <TextField
-                      label="List Name"
-                      fullWidth
-                      value={newListName}
-                      onChange={(e) => setNewListName(e.target.value)}
-                      sx={{ mt: 1 }}
-                    />
-                    {creatingListError && (
-                      <Alert severity="error" sx={{ mt: 1 }}>
-                        {creatingListError}
-                      </Alert>
-                    )}
-                  </>
-                )}
+                      <ListItemText primary={list.name} />
+                    </ListItem>
+                  ))}
+                </List>
+                <Button
+                  onClick={() => setCreatingList(true)}
+                  color="primary"
+                  sx={{ mt: 2 }}
+                >
+                  Create New List
+                </Button>
               </>
             )}
-          </DialogContent>
-          <DialogActions>
-            {!creatingList ? (
-              <Button onClick={handleClose} color="primary">
-                Cancel
-              </Button>
-            ) : (
-              <>
-                <Button onClick={() => setCreatingList(false)} color="primary">
-                  Back
-                </Button>
+            {creatingList && (
+              <Box component="form" onSubmit={handleCreateList} sx={{ mt: 2 }}>
+                <TextField
+                  label="List Name"
+                  value={newListName}
+                  onChange={(e) => setNewListName(e.target.value)}
+                  fullWidth
+                />
+                {creatingListError && (
+                  <Typography variant="body2" color="error">
+                    {creatingListError}
+                  </Typography>
+                )}
                 <Button
-                  onClick={handleCreateNewList}
+                  type="submit"
+                  variant="contained"
                   color="primary"
+                  sx={{ mt: 1 }}
                   disabled={creatingListLoading}
                 >
                   {creatingListLoading ? "Creating..." : "Create"}
                 </Button>
-              </>
+              </Box>
             )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleClose} color="primary">
+              Cancel
+            </Button>
           </DialogActions>
         </Dialog>
+
+        {/* Snackbar for notifications */}
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={6000}
+          onClose={handleCloseSnackbar}
+          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        >
+          <MuiAlert
+            onClose={handleCloseSnackbar}
+            severity={snackbarSeverity}
+            sx={{ width: "100%" }}
+            elevation={6}
+            variant="filled"
+          >
+            {snackbarMessage}
+          </MuiAlert>
+        </Snackbar>
       </Container>
     </>
   );
