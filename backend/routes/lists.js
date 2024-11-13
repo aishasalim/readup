@@ -174,72 +174,66 @@ router.delete("/:listId/items/:bookIsbn", requireAuth(), async (req, res) => {
 });
 
 // Move a book to another list
-router.post("/:listId/items", requireAuth(), async (req, res) => {
-  const userId = req.auth.userId;
-  const listId = req.params.listId;
-  const bookData = req.body.book; // Expecting full book data in 'book' property
+router.put(
+  "/:listId/items/:bookIsbn/move/:targetListId",
+  requireAuth(),
+  async (req, res) => {
+    const userId = req.auth.userId;
+    const { listId, bookIsbn, targetListId } = req.params;
 
-  try {
-    const listResult = await db.query(
-      "SELECT * FROM lists WHERE id = $1 AND user_id = $2",
-      [listId, userId]
-    );
-    if (listResult.rows.length === 0) {
-      return res.status(404).json({ error: "List not found" });
-    }
+    try {
+      // Verify source list
+      const sourceListResult = await db.query(
+        "SELECT * FROM lists WHERE id = $1 AND user_id = $2",
+        [listId, userId]
+      );
+      if (sourceListResult.rows.length === 0) {
+        return res.status(404).json({ error: "Source list not found." });
+      }
 
-    // Extract necessary fields from bookData
-    const {
-      primary_isbn13,
-      primary_isbn10,
-      title,
-      author,
-      publisher,
-      description,
-      book_image,
-      amazon_product_url,
-      rank,
-      rank_last_week,
-      weeks_on_list,
-      buy_links,
-    } = bookData;
+      // Verify target list
+      const targetListResult = await db.query(
+        "SELECT * FROM lists WHERE id = $1 AND user_id = $2",
+        [targetListId, userId]
+      );
+      if (targetListResult.rows.length === 0) {
+        return res.status(404).json({ error: "Target list not found." });
+      }
 
-    await db.query(
-      `INSERT INTO user_book_lists
-      (user_id, list_id, book_isbn, book_name, book_cover_photo, book_description, author, publisher, primary_isbn10, primary_isbn13, book_image, amazon_product_url, rank, rank_last_week, weeks_on_list, buy_links)
-      VALUES
-      ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-      ON CONFLICT (user_id, list_id, book_isbn) DO NOTHING`,
-      [
-        userId,
-        listId,
-        primary_isbn13 || bookData.book_isbn, // Use 'book_isbn' as fallback
-        title || bookData.book_name,
-        book_image || bookData.book_cover_photo,
-        description || bookData.book_description,
-        author,
-        publisher,
-        primary_isbn10,
-        primary_isbn13,
-        book_image,
-        amazon_product_url,
-        rank,
-        rank_last_week,
-        weeks_on_list,
-        buy_links, // Pass the JSON object directly
-      ]
-    );
+      // Check if the book exists in the source list
+      const bookInSource = await db.query(
+        "SELECT * FROM user_book_lists WHERE user_id = $1 AND list_id = $2 AND book_isbn = $3",
+        [userId, listId, bookIsbn]
+      );
+      if (bookInSource.rows.length === 0) {
+        return res
+          .status(404)
+          .json({ error: "Book not found in the source list." });
+      }
 
-    res.status(201).json({ message: "Book added to list" });
-  } catch (err) {
-    console.error("Error adding book to list:", err);
-    if (err.code === "23505") {
-      // PostgreSQL unique_violation error code
-      res.status(409).json({ error: "The book is already in the list." });
-    } else {
-      res.status(500).json({ error: "Failed to add book to list" });
+      // Check if the book already exists in the target list
+      const bookInTarget = await db.query(
+        "SELECT * FROM user_book_lists WHERE user_id = $1 AND list_id = $2 AND book_isbn = $3",
+        [userId, targetListId, bookIsbn]
+      );
+      if (bookInTarget.rows.length > 0) {
+        return res
+          .status(409)
+          .json({ error: "The book is already in the target list." });
+      }
+
+      // Move the book by updating its list_id
+      await db.query(
+        "UPDATE user_book_lists SET list_id = $1 WHERE user_id = $2 AND list_id = $3 AND book_isbn = $4",
+        [targetListId, userId, listId, bookIsbn]
+      );
+
+      res.json({ message: "Book moved to the new list successfully." });
+    } catch (err) {
+      console.error("Error moving book to another list:", err);
+      res.status(500).json({ error: "Failed to move book to the new list." });
     }
   }
-});
+);
 
 module.exports = router;
