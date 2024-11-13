@@ -4,14 +4,38 @@ Reference the Creating an Entity Relationship Diagram final project guide in the
 
 ## Create the List of Tables
 
-[👉🏾👉🏾👉🏾 List each table in your diagram]
+ **users**
+ 
+
+ - username
+ - name
+ - email
+ - avatar
+
+  **reviews**
+  
+
+ - review_id
+ - user_id
+ - books_isbn
+ - stars
+ - upvotes
+ - date_created
+
+ **cliped_books**
+ 
+
+ - book_id
+ - title
+ - user_id
+ - status
+ - created_at
+
 
 ## Add the Entity Relationship Diagram
+![image](https://github.com/user-attachments/assets/01436e0f-9ca5-450f-bd91-e1716bcb2bbc)
 
-[👉🏾👉🏾👉🏾 Include an image or images of the diagram below. You may also wish to use the following markdown syntax to outline each table, as per your preference.]
 
-| Column Name | Type | Description |
-|-------------|------|-------------|
-| id | integer | primary key |
-| name | text | name of the shoe model |
-| ... | ... | ... |
+[👉🏾👉🏾👉🏾 ERD](https://dbdiagram.io/d/Web103_Capstone-Project-671e6d4597a66db9a36bce85)
+
+

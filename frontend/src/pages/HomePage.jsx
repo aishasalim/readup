@@ -1,7 +1,8 @@
 // src/pages/HomePage.jsx
-import React, { useEffect, useState } from 'react';
-import Navbar from '../components/Navbar.jsx';
-import axios from 'axios';
+import React, { useEffect, useState } from "react";
+import Navbar from "../components/Navbar.jsx";
+import axios from "axios";
+import GitHubIcon from "@mui/icons-material/GitHub";
 import {
   Grid,
   Container,
@@ -10,19 +11,22 @@ import {
   TextField,
   Button,
   Box,
-} from '@mui/material';
-import BookCard from '../components/BookCard';
+  IconButton,
+} from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import BookCard from "../components/BookCard";
 
 function HomePage() {
+  const navigate = useNavigate();
   const [books, setBooks] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
   // State for search parameters
   const [searchParams, setSearchParams] = useState({
-    author: '',
-    title: '',
-    isbn: '',
+    author: "",
+    title: "",
+    isbn: "",
   });
 
   // State to determine if currently viewing search results
@@ -42,13 +46,15 @@ function HomePage() {
     setError(null);
     setIsSearching(false);
     try {
-      const response = await axios.get('http://localhost:3000/api/books/feed');
+      const response = await axios.get("http://localhost:3000/api/books/feed");
       // The NYT API returns lists of books
-      const allBooks = response.data.results.lists.flatMap((list) => list.books);
+      const allBooks = response.data.results.lists.flatMap(
+        (list) => list.books
+      );
       setBooks(allBooks);
     } catch (error) {
-      console.error('Error fetching books feed:', error);
-      setError('Failed to load books feed.');
+      console.error("Error fetching books feed:", error);
+      navigate("/404");
     } finally {
       setLoading(false);
     }
@@ -74,44 +80,48 @@ function HomePage() {
   const handleSearch = async (e) => {
     e.preventDefault();
     const { author, title, isbn } = searchParams;
-  
+
     // Validate that at least one search parameter is provided
     if (!author.trim() && !title.trim() && !isbn.trim()) {
-      setError('Please enter at least one search criterion.');
+      setError("Please enter at least one search criterion.");
       return;
     }
-  
+
     setLoading(true);
     setError(null);
     setIsSearching(true);
     try {
       const params = {};
-  
+
       if (author.trim()) params.author = author.trim();
       if (title.trim()) params.title = title.trim();
       if (isbn.trim()) params.isbn = isbn.trim();
-  
-      const response = await axios.get('http://localhost:3000/api/books/search', {
-        params,
-      });
-  
+
+      const response = await axios.get(
+        "http://localhost:3000/api/books/search",
+        {
+          params,
+        }
+      );
+
       // Extract books using the same logic as in fetchBooksFeed
-      const searchResults = response.data.results.lists.flatMap((list) => list.books);
+      const searchResults = response.data.results.lists.flatMap(
+        (list) => list.books
+      );
       setBooks(searchResults);
     } catch (error) {
-      console.error('Error searching books:', error);
-      setError('Failed to search books.');
+      console.error("Error searching books:", error);
+      navigate("/404");
     } finally {
       setLoading(false);
     }
   };
-  
 
   /**
    * Handles resetting the search and viewing the bestsellers feed.
    */
   const handleResetSearch = () => {
-    setSearchParams({ author: '', title: '', isbn: '' });
+    setSearchParams({ author: "", title: "", isbn: "" });
     fetchBooksFeed();
   };
 
@@ -195,7 +205,7 @@ function HomePage() {
             container
             justifyContent="center"
             alignItems="center"
-            sx={{ minHeight: '50vh' }}
+            sx={{ minHeight: "50vh" }}
           >
             <CircularProgress size={60} color="primary" />
           </Grid>
@@ -217,6 +227,31 @@ function HomePage() {
           </Typography>
         )}
       </Container>
+
+      {/* Footer */}
+      <Box
+        component="footer"
+        sx={{
+          mt: 4,
+          py: 2,
+          backgroundColor: "background.paper",
+          textAlign: "center",
+        }}
+      >
+        <Typography variant="body2" color="textSecondary">
+          Developed by Aisha Salimgereyeva, Sahrish Afzal, Maryam Nisar
+        </Typography>
+        <IconButton
+          component="a"
+          href="https://github.com/aishasalim/readup"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="GitHub"
+          sx={{ color: "text.secondary" }}
+        >
+          <GitHubIcon />
+        </IconButton>
+      </Box>
     </>
   );
 }
