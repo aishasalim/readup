@@ -12,6 +12,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "morgan": "^1.10.0",
+    "node-cache": "^5.1.2",
     "pg": "^8.13.1",
     "react-router-dom": "^6.27.0"
   }
