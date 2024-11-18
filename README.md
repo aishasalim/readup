@@ -8,7 +8,17 @@ Designed and developed by: Aisha Salimgereyeva, Sahrish Afzal, Maryam Nisar
 
 ## About
 
-[![YouTube Video](https://img.youtube.com/vi/CQt7erndSao/0.jpg)](https://youtu.be/CQt7erndSao)
+
+https://github.com/user-attachments/assets/f140ea01-590a-4645-81f6-0ee9cec62df4
+
+
+
+https://github.com/user-attachments/assets/22fccd8f-53c0-4405-8e60-0d8c6a9c76ef
+
+
+
+https://github.com/user-attachments/assets/afc7436c-ee5b-4071-9b82-f3b1df46d629
+
 
 ### Description and Purpose
 
