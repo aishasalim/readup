@@ -71,7 +71,19 @@ Complete the checklist below detailing each baseline, custom, and stretch featur
 
 ## Final Demo GIF
 
-![Demo GIF](https://submissions.us-east-1.linodeobjects.com/web103/Eyg58nlx.gif)
+
+
+https://github.com/user-attachments/assets/f140ea01-590a-4645-81f6-0ee9cec62df4
+
+
+
+https://github.com/user-attachments/assets/22fccd8f-53c0-4405-8e60-0d8c6a9c76ef
+
+
+
+https://github.com/user-attachments/assets/afc7436c-ee5b-4071-9b82-f3b1df46d629
+
+
 
 ## Reflection
 
