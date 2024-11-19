@@ -16,22 +16,22 @@ import {
   ListItem,
   ListItemText,
   TextField,
-  Snackbar, // Import Snackbar
-  Alert as MuiAlert, // Import Alert
+  Snackbar,
+  Alert as MuiAlert,
   CircularProgress,
 } from "@mui/material";
-import axios from "axios";
 import Navbar from "../components/Navbar.jsx";
 import Reviews from "../components/Reviews.jsx";
 import BookProfile from "../components/BookProfile";
 import { useAuth } from "@clerk/clerk-react";
-import { fetchBookByISBN } from "../api/books"; // Import fetchBookByISBN
+import { fetchBookByISBN } from "../api/books";
+import { fetchUserLists, createList, addBookToList } from "../api/lists";
 
 function BookDetails() {
   const { isbn } = useParams();
   const location = useLocation();
   const { book } = location.state || {};
-  const { isSignedIn, getToken } = useAuth();
+  const { isSignedIn } = useAuth();
   const navigate = useNavigate();
 
   // State variables for the "Add to List" dialog
@@ -100,20 +100,7 @@ function BookDetails() {
 
   const handleAddToList = async (listId) => {
     try {
-      const token = await getToken();
-
-      const bookDataLocal = bookData; // Ensure 'bookData' is used
-
-      await axios.post(
-        `/lists/${listId}/items`,
-        { book: bookDataLocal },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
+      await addBookToList(listId, bookData);
       showSnackbar(`Book added to the list!`, "success");
     } catch (err) {
       console.error("Error adding book to list:", err);
@@ -134,15 +121,8 @@ function BookDetails() {
     try {
       setOpen(true);
       setLoadingLists(true);
-      const token = await getToken();
-
-      const response = await axios.get("/lists", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      setLists(response.data);
+      const data = await fetchUserLists();
+      setLists(data);
       setLoadingLists(false);
     } catch (err) {
       console.error("Error fetching lists:", err);
@@ -167,26 +147,14 @@ function BookDetails() {
     }
     try {
       setCreatingListLoading(true);
-      const token = await getToken();
-      const response = await axios.post(
-        "/lists",
-        { name: newListName },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const newList = await createList(newListName);
       // Add the new list to the lists
-      setLists([...lists, response.data]);
+      setLists([...lists, newList]);
       setCreatingList(false);
       setNewListName("");
       setCreatingListError(null);
       setCreatingListLoading(false);
-      showSnackbar(
-        `List "${response.data.name}" created successfully!`,
-        "success"
-      );
+      showSnackbar(`List "${newList.name}" created successfully!`, "success");
     } catch (err) {
       console.error("Error creating list:", err);
       setCreatingListError("Failed to create list.");
