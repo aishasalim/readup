@@ -1,6 +1,8 @@
 {
   "scripts": {
-    "start": "node backend/index.js"
+    "start": "node backend/index.js",
+    "build": "cd frontend && npm install && npm run build",
+    "postinstall": "cd backend && npm install && cd ../frontend && npm install"
   },
   "dependencies": {
     "@clerk/backend": "^1.14.1",

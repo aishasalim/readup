@@ -1,10 +1,11 @@
-// index.js
+// backend/index.js
 require("dotenv").config(); // Load environment variables first
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const { clerkMiddleware } = require("@clerk/express");
 const morgan = require("morgan"); // Optional: For logging
+const path = require("path"); // Add this line
 
 const app = express();
 
@@ -18,9 +19,10 @@ const app = express();
 //   })
 // );
 
+// 1. CORS Middleware
 app.use(
   cors({
-    origin: "https://readup-production.up.railway.app/",
+    origin: "https://readup-production.up.railway.app", // Remove trailing slash
     credentials: true,
   })
 );
@@ -51,15 +53,18 @@ app.use("/api/books", booksRouter);
 app.use("/api/reviews", reviewsRouter);
 app.use("/api/lists", listsRouter);
 
-// Root Route
-app.get("/", (req, res) => {
-  res.send("Welcome to the Book API");
+// Serve frontend build
+app.use(express.static(path.join(__dirname, "../frontend/dist")));
+
+// Serve frontend's index.html for any non-API routes
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
 });
 
-// Handle 404 - Not Found
-app.use((req, res) => {
-  res.status(404).json({ error: "Route not found" });
-});
+// Handle 404 - Not Found (Move this below the wildcard route)
+// app.use((req, res) => {
+//   res.status(404).json({ error: "Route not found" });
+// });
 
 // Global Error Handler
 app.use((err, req, res, next) => {
