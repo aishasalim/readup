@@ -1,8 +1,10 @@
-// src/pages/HomePage.jsx
+// frontend/src/pages/HomePage.jsx
+
 import React, { useEffect, useState } from "react";
 import Navbar from "../components/Navbar.jsx";
-import axios from "axios";
+import { fetchBooksFeed, searchBooks } from "../api/books";
 import GitHubIcon from "@mui/icons-material/GitHub";
+import { useAuth } from "@clerk/clerk-react";
 import {
   Grid,
   Container,
@@ -17,6 +19,7 @@ import { useNavigate } from "react-router-dom";
 import BookCard from "../components/BookCard";
 
 function HomePage() {
+  const { getToken } = useAuth();
   const navigate = useNavigate();
   const [books, setBooks] = useState([]);
   const [error, setError] = useState(null);
@@ -34,24 +37,22 @@ function HomePage() {
 
   useEffect(() => {
     // Fetch books from the backend API when the component mounts
-    fetchBooksFeed();
+    fetchBooksFeedHandler();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /**
    * Fetches the bestsellers feed from the NYT Books API.
    */
-  const fetchBooksFeed = async () => {
+  const fetchBooksFeedHandler = async () => {
     setLoading(true);
     setError(null);
     setIsSearching(false);
     try {
-      // Use relative path instead of hardcoded URL
-      const response = await axios.get("http://localhost:3000/api/books/feed");
-      // The NYT API returns lists of books
-      const allBooks = response.data.results.lists.flatMap(
-        (list) => list.books
-      );
+      const token = await getToken(); // Obtain the token
+      const data = await fetchBooksFeed(token); // Pass the token
+      const allBooks =
+        data?.results?.lists?.flatMap((list) => list.books) || [];
       setBooks(allBooks);
     } catch (error) {
       console.error("Error fetching books feed:", error);
@@ -82,7 +83,6 @@ function HomePage() {
     e.preventDefault();
     const { author, title, isbn } = searchParams;
 
-    // Validate that at least one search parameter is provided
     if (!author.trim() && !title.trim() && !isbn.trim()) {
       setError("Please enter at least one search criterion.");
       return;
@@ -98,18 +98,10 @@ function HomePage() {
       if (title.trim()) params.title = title.trim();
       if (isbn.trim()) params.isbn = isbn.trim();
 
-      // Use relative path instead of hardcoded URL
-      const response = await axios.get(
-        "http://localhost:3000/api/books/search",
-        {
-          params,
-        }
-      );
-
-      // Extract books using the same logic as in fetchBooksFeed
-      const searchResults = response.data.results.lists.flatMap(
-        (list) => list.books
-      );
+      const token = await getToken(); // Obtain the token
+      const data = await searchBooks(params, token); // Pass the token
+      const searchResults =
+        data?.results?.lists?.flatMap((list) => list.books) || [];
       setBooks(searchResults);
     } catch (error) {
       console.error("Error searching books:", error);
@@ -124,7 +116,7 @@ function HomePage() {
    */
   const handleResetSearch = () => {
     setSearchParams({ author: "", title: "", isbn: "" });
-    fetchBooksFeed();
+    fetchBooksFeedHandler();
   };
 
   return (

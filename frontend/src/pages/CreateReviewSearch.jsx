@@ -16,7 +16,8 @@ import {
   Container,
   Snackbar,
 } from "@mui/material";
-import axios from "axios";
+import { searchBooks } from "../api/books";
+import { createReview } from "../api/reviews";
 import Navbar from "../components/Navbar.jsx";
 import { useNavigate } from "react-router-dom";
 import { useAuth, useUser } from "@clerk/clerk-react";
@@ -122,15 +123,9 @@ const CreateReviewSearch = () => {
       if (title.trim()) params.title = title.trim();
       if (isbn.trim()) params.isbn = isbn.trim();
 
-      const response = await axios.get(
-        "http://localhost:3000/api/books/search",
-        {
-          params,
-        }
-      );
-
+      const data = await searchBooks(params);
       // Assuming the API returns a list of books
-      const books = response.data.results.lists.flatMap((list) => list.books);
+      const books = data?.results?.lists?.flatMap((list) => list.books) || [];
       setSearchResults(books);
 
       if (books.length === 0) {
@@ -200,21 +195,7 @@ const CreateReviewSearch = () => {
     setReviewError(null);
 
     try {
-      const token = await getToken();
-
-      await axios.post(
-        "http://localhost:3000/api/reviews",
-        {
-          book_isbn: selectedBook.primary_isbn13, // Use the book's ISBN
-          review_text,
-          stars,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await createReview(selectedBook.primary_isbn13, { stars, review_text });
 
       // Reset the form
       setNewReview({ stars: 5, review_text: "" });
@@ -224,7 +205,7 @@ const CreateReviewSearch = () => {
       setSnackbarOpen(true);
       // Redirect to the book details page
       setTimeout(() => {
-        navigate(`http://localhost:3000/book/${selectedBook.primary_isbn13}`, {
+        navigate(`/book/${selectedBook.primary_isbn13}`, {
           state: { book: selectedBook },
         });
       }, 500);

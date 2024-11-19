@@ -1,4 +1,5 @@
-// src/pages/EditReview.jsx
+// frontend/src/pages/EditReview.jsx
+
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -8,15 +9,16 @@ import {
   TextField,
   Container,
   Rating,
-  Alert,
   Snackbar,
   CircularProgress,
 } from "@mui/material";
+import MuiAlert from "@mui/material/Alert";
 import { useAuth, useUser } from "@clerk/clerk-react";
-import axios from "axios";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
 import BookProfile from "../components/BookProfile.jsx";
+import { fetchReviewById, updateReview } from "../api/reviews";
+import { fetchBookByISBN } from "../api/books"; // Import the new function
 
 const EditReview = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -24,11 +26,12 @@ const EditReview = () => {
   const [snackbarSeverity, setSnackbarSeverity] = useState("success"); // 'success', 'error', 'warning', 'info'
 
   const location = useLocation();
-  const { book } = location.state || {};
+  const { book } = location.state || {}; // May initially be undefined
   const { getToken } = useAuth();
   const { reviewId } = useParams();
   const navigate = useNavigate();
   const { user } = useUser();
+
   const handleCloseSnackbar = (event, reason) => {
     if (reason === "clickaway") {
       return;
@@ -56,27 +59,29 @@ const EditReview = () => {
 
   useEffect(() => {
     fetchReviewData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reviewId]);
 
+  /**
+   * Fetch the review data and corresponding book data to pre-fill the form.
+   */
   const fetchReviewData = async () => {
     setLoading(true); // Start loading indicator
     try {
-      const token = await getToken();
-      const response = await axios.get(
-        `http://localhost:3000/api/reviews/review/${reviewId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const review = response.data;
-
+      // Fetch the review details
+      const review = await fetchReviewById(reviewId);
       setReviewData({
         stars: review.stars,
         review_text: review.review_text,
       });
+
+      // Fetch the corresponding book details using book_isbn
+      const fetchedBook = await fetchBookByISBN(review.book_isbn);
+      if (fetchedBook) {
+        setBookData(fetchedBook);
+      } else {
+        setError("Associated book not found.");
+      }
     } catch (err) {
       console.error("Error fetching review:", err);
       setError(err.response?.data?.error || "Failed to load review.");
@@ -125,30 +130,19 @@ const EditReview = () => {
 
     try {
       setSubmitLoading(true);
-      const token = await getToken();
-      await axios.put(
-        `http://localhost:3000/api/reviews/review/${reviewId}`,
-        {
-          stars,
-          review_text,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      // Redirect to the book details page after successful update
-      // Wait before navigating
-      setTimeout(() => {
-        navigate(`http://localhost:3000/book/${primary_isbn13}`, {
-          state: { book: bookData },
-        });
-      }, 500);
+      await updateReview(reviewId, { stars, review_text });
+
       // Trigger success snackbar
       setSnackbarMessage("Review updated successfully!");
       setSnackbarSeverity("success");
       setSnackbarOpen(true);
+
+      // Redirect to the book details page after a short delay using the correct ISBN
+      setTimeout(() => {
+        navigate(`/book/${bookData.primary_isbn13}`, {
+          state: { book: bookData },
+        });
+      }, 1000);
     } catch (err) {
       console.error("Error updating review:", err);
       if (err.response && err.response.data && err.response.data.error) {
@@ -172,89 +166,107 @@ const EditReview = () => {
       <Navbar />
       <Container sx={{ pb: 4 }}>
         <Grid container spacing={4}>
-          <BookProfile
-            book_image={book_image}
-            title={title}
-            author={author}
-            description={description}
-            amazon_product_url={amazon_product_url}
-          />
+          {bookData ? (
+            <BookProfile
+              book_image={bookData.book_image}
+              title={bookData.title}
+              author={bookData.author}
+              description={bookData.description}
+              amazon_product_url={bookData.amazon_product_url}
+            />
+          ) : (
+            // Display a placeholder or message if book data is missing
+            <Grid item xs={12} md={8}>
+              <Typography variant="h6" color="error">
+                {error || "Loading book details..."}
+              </Typography>
+            </Grid>
+          )}
 
-          <Grid item xs={12} md={8}>
-            {loading ? (
-              // Display loading spinner when data is still fetching
-              <Box
-                display="flex"
-                justifyContent="center"
-                alignItems="center"
-                height="100%"
-              >
-                <CircularProgress />
-              </Box>
-            ) : (
-              <Box
-                component="form"
-                onSubmit={handleSubmitReview}
-                sx={{ mb: 4 }}
-              >
-                <Typography variant="h5" sx={{ my: 2 }}>
-                  Edit Your Review for "{title}"
-                </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12}>
-                    <Rating
-                      name="stars"
-                      value={reviewData.stars}
-                      onChange={handleStarChange}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <TextField
-                      label="Your Review"
-                      name="review_text"
-                      value={reviewData.review_text}
-                      onChange={handleInputChange}
-                      multiline
-                      fullWidth
-                      required
-                      minRows={4}
-                      maxRows={10}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      color="primary"
-                      disabled={submitLoading}
-                    >
-                      {submitLoading ? "Updating..." : "Update Review"}
-                    </Button>
-                  </Grid>
-                </Grid>
-                {error && (
-                  <Typography variant="body2" color="error" sx={{ mt: 2 }}>
-                    {error}
+          {bookData && (
+            <Grid item xs={12} md={8}>
+              {loading ? (
+                // Display loading spinner when data is still fetching
+                <Box
+                  display="flex"
+                  justifyContent="center"
+                  alignItems="center"
+                  height="100%"
+                >
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <Box
+                  component="form"
+                  onSubmit={handleSubmitReview}
+                  sx={{ mb: 4 }}
+                >
+                  <Typography variant="h5" sx={{ my: 2 }}>
+                    Edit Your Review for "{bookData.title}"
                   </Typography>
-                )}
-              </Box>
-            )}
-          </Grid>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12}>
+                      <Rating
+                        name="stars"
+                        value={reviewData.stars}
+                        onChange={handleStarChange}
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        label="Your Review"
+                        name="review_text"
+                        value={reviewData.review_text}
+                        onChange={handleInputChange}
+                        multiline
+                        fullWidth
+                        required
+                        minRows={4}
+                        maxRows={10}
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Button
+                        type="submit"
+                        variant="contained"
+                        color="primary"
+                        disabled={submitLoading}
+                      >
+                        {submitLoading ? (
+                          <CircularProgress size={24} color="inherit" />
+                        ) : (
+                          "Update Review"
+                        )}
+                      </Button>
+                    </Grid>
+                  </Grid>
+                  {error && (
+                    <Typography variant="body2" color="error" sx={{ mt: 2 }}>
+                      {error}
+                    </Typography>
+                  )}
+                </Box>
+              )}
+            </Grid>
+          )}
         </Grid>
 
+        {/* Snackbar for notifications */}
         <Snackbar
           open={snackbarOpen}
           autoHideDuration={6000}
           onClose={handleCloseSnackbar}
           anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
         >
-          <Alert
+          <MuiAlert
             onClose={handleCloseSnackbar}
             severity={snackbarSeverity}
             sx={{ width: "100%" }}
+            elevation={6}
+            variant="filled"
           >
             {snackbarMessage}
-          </Alert>
+          </MuiAlert>
         </Snackbar>
       </Container>
     </>

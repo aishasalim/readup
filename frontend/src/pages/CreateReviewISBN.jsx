@@ -12,11 +12,11 @@ import {
   Alert,
 } from "@mui/material";
 import { useAuth } from "@clerk/clerk-react";
-import axios from "axios";
 import MuiAlert from "@mui/material/Alert";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
 import BookProfile from "../components/BookProfile.jsx";
+import { createReview } from "../api/reviews";
 import { CircularProgress } from "@mui/material";
 
 const CreateReviewISBN = () => {
@@ -124,26 +124,14 @@ const CreateReviewISBN = () => {
 
     try {
       const token = await getToken();
-      await axios.post(
-        "http://localhost:3000/api/reviews",
-        {
-          book_isbn: isbn,
-          review_text,
-          stars,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await createReview(isbn, { stars, review_text });
       // Trigger success snackbar
       setSnackbarMessage("Review submitted successfully!");
       setSnackbarSeverity("success");
       setSnackbarOpen(true);
       // Redirect to the book details page after a short delay
       setTimeout(() => {
-        navigate(`http://localhost:3000/book/${primary_isbn13}`, {
+        navigate(`/book/${primary_isbn13}`, {
           state: { book },
         });
       }, 500);

@@ -1,7 +1,7 @@
-// pages/BookDetails.jsx
+// frontend/src/pages/BookDetails.jsx
 
-import React, { useState } from "react";
-import { useLocation, Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useLocation, Link, useNavigate, useParams } from "react-router-dom";
 import {
   Container,
   Typography,
@@ -18,14 +18,17 @@ import {
   TextField,
   Snackbar, // Import Snackbar
   Alert as MuiAlert, // Import Alert
+  CircularProgress,
 } from "@mui/material";
 import axios from "axios";
 import Navbar from "../components/Navbar.jsx";
 import Reviews from "../components/Reviews.jsx";
 import BookProfile from "../components/BookProfile";
 import { useAuth } from "@clerk/clerk-react";
+import { fetchBookByISBN } from "../api/books"; // Import fetchBookByISBN
 
 function BookDetails() {
+  const { isbn } = useParams();
   const location = useLocation();
   const { book } = location.state || {};
   const { isSignedIn, getToken } = useAuth();
@@ -48,24 +51,37 @@ function BookDetails() {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState("success"); // 'success', 'error', 'warning', 'info'
 
-  if (!book) {
-    // Handle the case where no book data is available (e.g., direct URL access)
-    return (
-      <>
-        <Navbar />
-        <Container sx={{ py: 4 }}>
-          <Typography variant="h6" color="error" align="center">
-            No book data available. Please navigate from the home page.
-          </Typography>
-          <Grid container justifyContent="center" sx={{ mt: 4 }}>
-            <Button variant="outlined" component={Link} to="/" color="primary">
-              Back to Home
-            </Button>
-          </Grid>
-        </Container>
-      </>
-    );
-  }
+  // State for book details
+  const [bookData, setBookData] = useState(book || null);
+  const [loadingBook, setLoadingBook] = useState(!book);
+  const [bookError, setBookError] = useState(null);
+
+  useEffect(() => {
+    if (!bookData) {
+      fetchBookDetails();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isbn]);
+
+  /**
+   * Fetch book details if not passed via location.state
+   */
+  const fetchBookDetails = async () => {
+    setLoadingBook(true);
+    try {
+      const fetchedBook = await fetchBookByISBN(isbn);
+      if (fetchedBook) {
+        setBookData(fetchedBook);
+      } else {
+        setBookError("Book not found.");
+      }
+    } catch (err) {
+      console.error("Error fetching book details:", err);
+      setBookError("Failed to load book details.");
+    } finally {
+      setLoadingBook(false);
+    }
+  };
 
   // Handler to close the Snackbar
   const handleCloseSnackbar = (event, reason) => {
@@ -86,11 +102,11 @@ function BookDetails() {
     try {
       const token = await getToken();
 
-      const bookData = book; // Assuming 'book' is the full book object in your component
+      const bookDataLocal = bookData; // Ensure 'bookData' is used
 
       await axios.post(
         `http://localhost:3000/api/lists/${listId}/items`,
-        { book: bookData },
+        { book: bookDataLocal },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -179,6 +195,42 @@ function BookDetails() {
     }
   };
 
+  if (loadingBook) {
+    return (
+      <>
+        <Navbar />
+        <Container>
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            height="80vh"
+          >
+            <CircularProgress />
+          </Box>
+        </Container>
+      </>
+    );
+  }
+
+  if (bookError) {
+    return (
+      <>
+        <Navbar />
+        <Container>
+          <Typography variant="h6" color="error" align="center" sx={{ mt: 4 }}>
+            {bookError}
+          </Typography>
+          <Grid container justifyContent="center" sx={{ mt: 4 }}>
+            <Button variant="outlined" component={Link} to="/" color="primary">
+              Back to Home
+            </Button>
+          </Grid>
+        </Container>
+      </>
+    );
+  }
+
   const {
     title,
     author,
@@ -186,7 +238,7 @@ function BookDetails() {
     description,
     amazon_product_url,
     primary_isbn13,
-  } = book;
+  } = bookData;
 
   return (
     <>
@@ -222,7 +274,7 @@ function BookDetails() {
                   color="primary"
                   onClick={() =>
                     navigate(`/book/create/${primary_isbn13}`, {
-                      state: { book },
+                      state: { book: bookData },
                     })
                   }
                 >
@@ -231,7 +283,7 @@ function BookDetails() {
               )}
             </Box>
 
-            <Reviews bookIsbn={primary_isbn13} book={book} />
+            <Reviews bookIsbn={primary_isbn13} book={bookData} />
           </Grid>
         </Grid>
 

@@ -1,26 +1,19 @@
 // pages/AdminPage.jsx
+
 import React, { useState } from "react";
-import axios from "axios";
 import { useAuth } from "@clerk/clerk-react";
 import { CircularProgress } from "@mui/material";
+import { resetDatabase } from "../api/admin"; // Import the API function
 
 const AdminPage = () => {
-  const { getToken, isLoaded } = useAuth();
+  const { isLoaded } = useAuth();
   const [loading, setLoading] = useState(false);
 
   const handleReset = async () => {
     setLoading(true);
     try {
-      // Make the POST request without the token
-      const response = await axios.post(
-        "http://localhost:3000/api/reset",
-        {},
-        {
-          withCredentials: true, // Include this to send cookies
-        }
-      );
-
-      alert(response.data.message);
+      const data = await resetDatabase(); // Use the API function
+      alert(data.message);
     } catch (error) {
       console.error("Failed to reset database:", error);
       alert("Error resetting database.");

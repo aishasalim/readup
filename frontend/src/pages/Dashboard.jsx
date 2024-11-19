@@ -1,7 +1,6 @@
 // src/components/Dashboard.jsx
 
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import {
   Box,
   Typography,
@@ -28,10 +27,18 @@ import {
 import { useUser, useAuth } from "@clerk/clerk-react";
 import Navbar from "../components/Navbar.jsx";
 import { useNavigate } from "react-router-dom";
+import {
+  fetchUserLists,
+  deleteBookFromList,
+  moveBookToList,
+} from "../api/lists";
+import { fetchReviewsByUser } from "../api/reviews";
+import { fetchBookData } from "../api/books"; // Now correctly imported
 
 const Dashboard = () => {
   const { user } = useUser();
-  const { getToken } = useAuth();
+  // You can remove getToken if not used elsewhere
+  // const { getToken } = useAuth();
   const [tabValue, setTabValue] = useState(0);
   const [reviews, setReviews] = useState([]);
   const [userReviews, setUserReviews] = useState([]); // Combined reviews with book data
@@ -76,19 +83,12 @@ const Dashboard = () => {
 
   // Fetch lists when the component mounts
   useEffect(() => {
-    const fetchLists = async () => {
+    const fetchListsData = async () => {
       setListsLoading(true);
       try {
-        const token = await getToken();
-
-        const response = await axios.get("http://localhost:3000/api/lists", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true,
-        });
-        setLists(response.data);
-        console.log("Fetched Lists:", response.data);
+        const data = await fetchUserLists();
+        setLists(data);
+        console.log("Fetched Lists:", data);
         setListsError(null);
       } catch (err) {
         console.error("Error fetching lists:", err);
@@ -100,76 +100,22 @@ const Dashboard = () => {
     };
 
     if (user?.id) {
-      fetchLists();
+      fetchListsData();
     }
-  }, [user, getToken]);
-
-  // Helper function to fetch book data using Google Books API
-  const fetchBookData = async (isbn) => {
-    try {
-      const response = await axios.get(
-        `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`
-      );
-      if (
-        response.data.totalItems > 0 &&
-        response.data.items &&
-        response.data.items.length > 0
-      ) {
-        const bookInfo = response.data.items[0].volumeInfo;
-        return {
-          title: bookInfo.title || "No Title",
-          author: bookInfo.authors
-            ? bookInfo.authors.join(", ")
-            : "Unknown Author",
-          book_image: bookInfo.imageLinks ? bookInfo.imageLinks.thumbnail : "",
-          description: bookInfo.description || "No Description Available.",
-          amazon_product_url: bookInfo.infoLink || "",
-          primary_isbn13: isbn,
-        };
-      } else {
-        return {
-          title: "No Title",
-          author: "Unknown Author",
-          book_image: "",
-          description: "No Description Available.",
-          amazon_product_url: "",
-          primary_isbn13: isbn,
-        };
-      }
-    } catch (err) {
-      console.error(`Error fetching book data for ISBN ${isbn}:`, err);
-      return {
-        title: "No Title",
-        author: "Unknown Author",
-        book_image: "",
-        description: "No Description Available.",
-        amazon_product_url: "",
-        primary_isbn13: isbn,
-      };
-    }
-  };
+  }, [user]);
 
   // Fetch user reviews when component mounts
   useEffect(() => {
-    const fetchReviews = async () => {
+    const fetchUserReviews = async () => {
       setLoading(true);
       try {
-        const token = await getToken();
-
-        const response = await axios.get(
-          `http://localhost:3000/api/reviews/user/${user.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        setReviews(response.data);
+        const reviewsData = await fetchReviewsByUser(user.id);
+        setReviews(reviewsData);
         setError(null);
 
         // Fetch book data for each review
         const reviewsWithBookData = await Promise.all(
-          response.data.map(async (review) => {
+          reviewsData.map(async (review) => {
             const book = await fetchBookData(review.book_isbn);
             return { ...review, book };
           })
@@ -186,33 +132,21 @@ const Dashboard = () => {
     };
 
     if (user?.id) {
-      fetchReviews();
+      fetchUserReviews();
     }
-  }, [user, getToken]);
+  }, [user]);
 
   // Handler for navigating to the book detail page
   const handleCardClick = (book) => {
-    navigate(
-      `http://localhost:3000/book/${book.primary_isbn13 || book.book_isbn}`,
-      {
-        state: { book },
-      }
-    );
+    navigate(`/book/${book.primary_isbn13 || book.book_isbn}`, {
+      state: { book },
+    });
   };
 
   // Handle deleting a book from a list
   const handleDeleteFromList = async (listId, bookIsbn) => {
     try {
-      const token = await getToken();
-
-      await axios.delete(
-        `http://localhost:3000/api/lists/${listId}/items/${bookIsbn}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await deleteBookFromList(listId, bookIsbn);
 
       // Update the state to remove the book from the list
       setLists((prevLists) =>
@@ -243,17 +177,7 @@ const Dashboard = () => {
 
   const handleConfirmMove = async () => {
     try {
-      const token = await getToken();
-
-      await axios.put(
-        `http://localhost:3000/api/lists/${currentListId}/items/${selectedBook.book_isbn}/move/${targetListId}`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await moveBookToList(currentListId, selectedBook.book_isbn, targetListId);
 
       // Update the lists state
       setLists((prevLists) => {

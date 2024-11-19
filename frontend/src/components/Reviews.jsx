@@ -1,6 +1,6 @@
-// src/components/Reviews.jsx
+// frontend/src/components/Reviews.jsx
+
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import {
   Typography,
   Grid,
@@ -21,28 +21,23 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  Alert,
+  Alert as MuiAlert,
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ThumbUpIcon from "@mui/icons-material/ThumbUp";
 import ThumbUpOffAltIcon from "@mui/icons-material/ThumbUpOffAlt";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
-
-// Snackbar Alert Component
-const AlertComponent = React.forwardRef(function Alert(props, ref) {
-  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
-});
+import { fetchReviewsByISBN, deleteReview, toggleUpvote } from "../api/reviews";
 
 const Reviews = ({ bookIsbn, book }) => {
   const navigate = useNavigate();
-  const [reviews, setReviews] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
   const { getToken } = useAuth();
   const { user } = useUser();
   const currentUserId = user?.id;
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   // State for managing the menu
   const [anchorEl, setAnchorEl] = useState(null);
@@ -71,11 +66,9 @@ const Reviews = ({ bookIsbn, book }) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(
-        `http://localhost:3000/api/reviews/${bookIsbn}`
-      );
-      console.log("Fetched reviews:", response.data);
-      setReviews(response.data);
+      const data = await fetchReviewsByISBN(bookIsbn);
+      console.log("Fetched reviews:", data);
+      setReviews(data);
     } catch (err) {
       console.error("Error fetching reviews:", err);
       setError("Failed to load reviews.");
@@ -105,16 +98,10 @@ const Reviews = ({ bookIsbn, book }) => {
    */
   const handleEdit = (reviewId) => {
     console.log(`Edit review with ID: ${reviewId}`);
-    navigate(`http://localhost:3000/${bookIsbn}/reviews/${reviewId}/edit`, {
+    navigate(`/${bookIsbn}/reviews/${reviewId}/edit`, {
       state: { book },
     });
     handleMenuClose();
-  };
-  const handleCloseSnackbar = (event, reason) => {
-    if (reason === "clickaway") {
-      return;
-    }
-    setSnackbar({ ...snackbar, open: false });
   };
 
   /**
@@ -133,15 +120,7 @@ const Reviews = ({ bookIsbn, book }) => {
     if (!reviewToDelete) return;
     try {
       const token = await getToken();
-      console.log("Delete token:", token); // Log the token for debugging
-      await axios.delete(
-        `http://localhost:3000/api/reviews/${reviewToDelete}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await deleteReview(reviewToDelete, token);
       // Remove the deleted review from the state
       setReviews((prevReviews) =>
         prevReviews.filter((rev) => rev.review_id !== reviewToDelete)
@@ -154,11 +133,12 @@ const Reviews = ({ bookIsbn, book }) => {
       setError(null);
     } catch (err) {
       console.error("Error deleting review:", err);
-      if (err.response && err.response.data && err.response.data.error) {
-        setError(err.response.data.error);
-      } else {
-        setError("Failed to delete review.");
-      }
+      setError("Failed to delete review.");
+      setSnackbar({
+        open: true,
+        message: "Failed to delete review.",
+        severity: "error",
+      });
     } finally {
       setDeleteDialogOpen(false);
       setReviewToDelete(null);
@@ -178,20 +158,9 @@ const Reviews = ({ bookIsbn, book }) => {
    */
   const handleUpvote = async (reviewId, userUpvoted) => {
     try {
-      const token = await getToken();
-      console.log("Upvote toggle token:", token); // For debugging
-      const response = await axios.post(
-        `http://localhost:3000/api/reviews/${reviewId}/upvote`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      // Determine action based on response
-      const { upvotes, action } = response.data;
+      const data = await toggleUpvote(reviewId, getToken);
+      // Assuming the response contains the updated upvotes and upvote status
+      const { upvotes, userUpvoted: updatedUserUpvoted } = data;
 
       // Update the upvotes and userUpvoted status in the local state
       setReviews((prevReviews) =>
@@ -200,20 +169,20 @@ const Reviews = ({ bookIsbn, book }) => {
             ? {
                 ...review,
                 upvotes: upvotes,
-                userUpvoted: action === "added",
+                userUpvoted: updatedUserUpvoted,
               }
             : review
         )
       );
 
       // Show snackbar notification
-      if (action === "added") {
+      if (updatedUserUpvoted) {
         setSnackbar({
           open: true,
           message: "Upvoted successfully!",
           severity: "success",
         });
-      } else if (action === "removed") {
+      } else {
         setSnackbar({
           open: true,
           message: "Upvote removed.",
@@ -222,12 +191,22 @@ const Reviews = ({ bookIsbn, book }) => {
       }
     } catch (err) {
       console.error("Error toggling upvote:", err);
-      if (err.response && err.response.data && err.response.data.error) {
-        setError(err.response.data.error);
-      } else {
-        setError("Failed to toggle upvote.");
-      }
+      setSnackbar({
+        open: true,
+        message: "Failed to toggle upvote.",
+        severity: "error",
+      });
     }
+  };
+
+  /**
+   * Handle closing the Snackbar.
+   */
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setSnackbar({ ...snackbar, open: false });
   };
 
   return (
@@ -310,9 +289,8 @@ const Reviews = ({ bookIsbn, book }) => {
                 </Box>
 
                 {/* Menu Component */}
-                {review.user_id === currentUserId && [
+                {review.user_id === currentUserId && (
                   <Menu
-                    key={`menu-${review.review_id}`}
                     id={`menu-${review.review_id}`}
                     anchorEl={anchorEl}
                     open={
@@ -340,8 +318,8 @@ const Reviews = ({ bookIsbn, book }) => {
                     >
                       Delete
                     </MenuItem>
-                  </Menu>,
-                ]}
+                  </Menu>
+                )}
               </Card>
             </Grid>
           ))}
@@ -375,19 +353,23 @@ const Reviews = ({ bookIsbn, book }) => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar for notifications */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert
+        <MuiAlert
           onClose={handleCloseSnackbar}
           severity={snackbar.severity}
           sx={{ width: "100%" }}
+          elevation={6}
+          variant="filled"
         >
           {snackbar.message}
-        </Alert>
+        </MuiAlert>
       </Snackbar>
     </Box>
   );
