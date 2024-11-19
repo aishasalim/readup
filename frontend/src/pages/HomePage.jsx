@@ -22,7 +22,8 @@ function HomePage() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
+  // Remove API_BASE_URL if using relative paths
+  // const API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
   // State for search parameters
   const [searchParams, setSearchParams] = useState({
@@ -48,7 +49,8 @@ function HomePage() {
     setError(null);
     setIsSearching(false);
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/books/feed`);
+      // Use relative path instead of hardcoded URL
+      const response = await axios.get("/api/books/feed");
       // The NYT API returns lists of books
       const allBooks = response.data.results.lists.flatMap(
         (list) => list.books
@@ -99,7 +101,8 @@ function HomePage() {
       if (title.trim()) params.title = title.trim();
       if (isbn.trim()) params.isbn = isbn.trim();
 
-      const response = await axios.get(`${API_BASE_URL}/api/books/search`, {
+      // Use relative path instead of hardcoded URL
+      const response = await axios.get("/api/books/search", {
         params,
       });
 
