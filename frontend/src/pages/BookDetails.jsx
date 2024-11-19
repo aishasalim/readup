@@ -105,7 +105,7 @@ function BookDetails() {
       const bookDataLocal = bookData; // Ensure 'bookData' is used
 
       await axios.post(
-        `http://localhost:3000/api/lists/${listId}/items`,
+        `/lists/${listId}/items`,
         { book: bookDataLocal },
         {
           headers: {
@@ -136,7 +136,7 @@ function BookDetails() {
       setLoadingLists(true);
       const token = await getToken();
 
-      const response = await axios.get("http://localhost:3000/api/lists", {
+      const response = await axios.get("/lists", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -169,7 +169,7 @@ function BookDetails() {
       setCreatingListLoading(true);
       const token = await getToken();
       const response = await axios.post(
-        "http://localhost:3000/api/lists",
+        "/lists",
         { name: newListName },
         {
           headers: {
