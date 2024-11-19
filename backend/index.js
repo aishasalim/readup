@@ -12,20 +12,20 @@ const app = express();
 // Middleware
 
 // 1. CORS Middleware
-app.use(
-  cors({
-    origin: "http://localhost:5173",
-    credentials: true,
-  })
-);
-
-// // 1. CORS Middleware
 // app.use(
 //   cors({
-//     origin: "https://readup-production.up.railway.app", // Remove trailing slash
+//     origin: "http://localhost:5173",
 //     credentials: true,
 //   })
 // );
+
+// // 1. CORS Middleware
+app.use(
+  cors({
+    origin: "https://readup-production.up.railway.app", // Remove trailing slash
+    credentials: true,
+  })
+);
 
 // 2. Morgan Logging Middleware
 app.use(morgan("dev")); // Logging middleware should be early to log all requests
