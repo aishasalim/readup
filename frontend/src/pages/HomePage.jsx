@@ -22,6 +22,8 @@ function HomePage() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
+
   // State for search parameters
   const [searchParams, setSearchParams] = useState({
     author: "",
@@ -46,7 +48,7 @@ function HomePage() {
     setError(null);
     setIsSearching(false);
     try {
-      const response = await axios.get("http://localhost:3000/api/books/feed");
+      const response = await axios.get(`${API_BASE_URL}/api/books/feed`);
       // The NYT API returns lists of books
       const allBooks = response.data.results.lists.flatMap(
         (list) => list.books
@@ -97,12 +99,9 @@ function HomePage() {
       if (title.trim()) params.title = title.trim();
       if (isbn.trim()) params.isbn = isbn.trim();
 
-      const response = await axios.get(
-        "http://localhost:3000/api/books/search",
-        {
-          params,
-        }
-      );
+      const response = await axios.get(`${API_BASE_URL}/api/books/search`, {
+        params,
+      });
 
       // Extract books using the same logic as in fetchBooksFeed
       const searchResults = response.data.results.lists.flatMap(
