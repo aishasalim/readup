@@ -12,20 +12,20 @@ const app = express();
 // Middleware
 
 // 1. CORS Middleware
-// app.use(
-//   cors({
-//     origin: "http://localhost:5173", // Replace with your frontend URL
-//     credentials: true, // Allow cookies to be sent
-//   })
-// );
-
-// 1. CORS Middleware
 app.use(
   cors({
-    origin: "https://readup-production.up.railway.app", // Remove trailing slash
+    origin: "http://localhost:5173",
     credentials: true,
   })
 );
+
+// // 1. CORS Middleware
+// app.use(
+//   cors({
+//     origin: "https://readup-production.up.railway.app", // Remove trailing slash
+//     credentials: true,
+//   })
+// );
 
 // 2. Morgan Logging Middleware
 app.use(morgan("dev")); // Logging middleware should be early to log all requests
@@ -60,11 +60,6 @@ app.use(express.static(path.join(__dirname, "../frontend/dist")));
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
 });
-
-// Handle 404 - Not Found (Move this below the wildcard route)
-// app.use((req, res) => {
-//   res.status(404).json({ error: "Route not found" });
-// });
 
 // Global Error Handler
 app.use((err, req, res, next) => {

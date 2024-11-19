@@ -122,9 +122,12 @@ const CreateReviewSearch = () => {
       if (title.trim()) params.title = title.trim();
       if (isbn.trim()) params.isbn = isbn.trim();
 
-      const response = await axios.get("/api/books/search", {
-        params,
-      });
+      const response = await axios.get(
+        "http://localhost:3000/api/books/search",
+        {
+          params,
+        }
+      );
 
       // Assuming the API returns a list of books
       const books = response.data.results.lists.flatMap((list) => list.books);
@@ -200,7 +203,7 @@ const CreateReviewSearch = () => {
       const token = await getToken();
 
       await axios.post(
-        "/api/reviews",
+        "http://localhost:3000/api/reviews",
         {
           book_isbn: selectedBook.primary_isbn13, // Use the book's ISBN
           review_text,
@@ -221,7 +224,7 @@ const CreateReviewSearch = () => {
       setSnackbarOpen(true);
       // Redirect to the book details page
       setTimeout(() => {
-        navigate(`/book/${selectedBook.primary_isbn13}`, {
+        navigate(`http://localhost:3000/book/${selectedBook.primary_isbn13}`, {
           state: { book: selectedBook },
         });
       }, 500);

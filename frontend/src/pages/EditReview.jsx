@@ -62,11 +62,14 @@ const EditReview = () => {
     setLoading(true); // Start loading indicator
     try {
       const token = await getToken();
-      const response = await axios.get(`/api/reviews/review/${reviewId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axios.get(
+        `http://localhost:3000/api/reviews/review/${reviewId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       const review = response.data;
 
@@ -124,7 +127,7 @@ const EditReview = () => {
       setSubmitLoading(true);
       const token = await getToken();
       await axios.put(
-        `/api/reviews/review/${reviewId}`,
+        `http://localhost:3000/api/reviews/review/${reviewId}`,
         {
           stars,
           review_text,
@@ -138,7 +141,9 @@ const EditReview = () => {
       // Redirect to the book details page after successful update
       // Wait before navigating
       setTimeout(() => {
-        navigate(`/book/${primary_isbn13}`, { state: { book: bookData } });
+        navigate(`http://localhost:3000/book/${primary_isbn13}`, {
+          state: { book: bookData },
+        });
       }, 500);
       // Trigger success snackbar
       setSnackbarMessage("Review updated successfully!");

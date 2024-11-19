@@ -125,7 +125,7 @@ const CreateReviewISBN = () => {
     try {
       const token = await getToken();
       await axios.post(
-        "/api/reviews",
+        "http://localhost:3000/api/reviews",
         {
           book_isbn: isbn,
           review_text,
@@ -143,7 +143,9 @@ const CreateReviewISBN = () => {
       setSnackbarOpen(true);
       // Redirect to the book details page after a short delay
       setTimeout(() => {
-        navigate(`/book/${primary_isbn13}`, { state: { book } });
+        navigate(`http://localhost:3000/book/${primary_isbn13}`, {
+          state: { book },
+        });
       }, 500);
     } catch (err) {
       console.error("Error submitting review:", err);

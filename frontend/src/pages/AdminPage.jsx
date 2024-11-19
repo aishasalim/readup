@@ -13,7 +13,7 @@ const AdminPage = () => {
     try {
       // Make the POST request without the token
       const response = await axios.post(
-        "/api/reset",
+        "http://localhost:3000/api/reset",
         {},
         {
           withCredentials: true, // Include this to send cookies

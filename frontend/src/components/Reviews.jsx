@@ -71,7 +71,9 @@ const Reviews = ({ bookIsbn, book }) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`/api/reviews/${bookIsbn}`);
+      const response = await axios.get(
+        `http://localhost:3000/api/reviews/${bookIsbn}`
+      );
       console.log("Fetched reviews:", response.data);
       setReviews(response.data);
     } catch (err) {
@@ -103,7 +105,9 @@ const Reviews = ({ bookIsbn, book }) => {
    */
   const handleEdit = (reviewId) => {
     console.log(`Edit review with ID: ${reviewId}`);
-    navigate(`/${bookIsbn}/reviews/${reviewId}/edit`, { state: { book } });
+    navigate(`http://localhost:3000/${bookIsbn}/reviews/${reviewId}/edit`, {
+      state: { book },
+    });
     handleMenuClose();
   };
   const handleCloseSnackbar = (event, reason) => {
@@ -130,11 +134,14 @@ const Reviews = ({ bookIsbn, book }) => {
     try {
       const token = await getToken();
       console.log("Delete token:", token); // Log the token for debugging
-      await axios.delete(`/api/reviews/${reviewToDelete}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      await axios.delete(
+        `http://localhost:3000/api/reviews/${reviewToDelete}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       // Remove the deleted review from the state
       setReviews((prevReviews) =>
         prevReviews.filter((rev) => rev.review_id !== reviewToDelete)
@@ -174,7 +181,7 @@ const Reviews = ({ bookIsbn, book }) => {
       const token = await getToken();
       console.log("Upvote toggle token:", token); // For debugging
       const response = await axios.post(
-        `/api/reviews/${reviewId}/upvote`,
+        `http://localhost:3000/api/reviews/${reviewId}/upvote`,
         {},
         {
           headers: {

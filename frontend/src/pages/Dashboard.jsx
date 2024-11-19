@@ -81,7 +81,7 @@ const Dashboard = () => {
       try {
         const token = await getToken();
 
-        const response = await axios.get("/api/lists", {
+        const response = await axios.get("http://localhost:3000/api/lists", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -156,11 +156,14 @@ const Dashboard = () => {
       try {
         const token = await getToken();
 
-        const response = await axios.get(`/api/reviews/user/${user.id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await axios.get(
+          `http://localhost:3000/api/reviews/user/${user.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
         setReviews(response.data);
         setError(null);
 
@@ -189,9 +192,12 @@ const Dashboard = () => {
 
   // Handler for navigating to the book detail page
   const handleCardClick = (book) => {
-    navigate(`/book/${book.primary_isbn13 || book.book_isbn}`, {
-      state: { book },
-    });
+    navigate(
+      `http://localhost:3000/book/${book.primary_isbn13 || book.book_isbn}`,
+      {
+        state: { book },
+      }
+    );
   };
 
   // Handle deleting a book from a list
@@ -199,11 +205,14 @@ const Dashboard = () => {
     try {
       const token = await getToken();
 
-      await axios.delete(`/api/lists/${listId}/items/${bookIsbn}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      await axios.delete(
+        `http://localhost:3000/api/lists/${listId}/items/${bookIsbn}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       // Update the state to remove the book from the list
       setLists((prevLists) =>
@@ -237,7 +246,7 @@ const Dashboard = () => {
       const token = await getToken();
 
       await axios.put(
-        `/api/lists/${currentListId}/items/${selectedBook.book_isbn}/move/${targetListId}`,
+        `http://localhost:3000/api/lists/${currentListId}/items/${selectedBook.book_isbn}/move/${targetListId}`,
         {},
         {
           headers: {

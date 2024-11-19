@@ -47,7 +47,7 @@ function HomePage() {
     setIsSearching(false);
     try {
       // Use relative path instead of hardcoded URL
-      const response = await axios.get("/api/books/feed");
+      const response = await axios.get("http://localhost:3000/api/books/feed");
       // The NYT API returns lists of books
       const allBooks = response.data.results.lists.flatMap(
         (list) => list.books
@@ -99,9 +99,12 @@ function HomePage() {
       if (isbn.trim()) params.isbn = isbn.trim();
 
       // Use relative path instead of hardcoded URL
-      const response = await axios.get("/api/books/search", {
-        params,
-      });
+      const response = await axios.get(
+        "http://localhost:3000/api/books/search",
+        {
+          params,
+        }
+      );
 
       // Extract books using the same logic as in fetchBooksFeed
       const searchResults = response.data.results.lists.flatMap(
