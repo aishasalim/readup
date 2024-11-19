@@ -125,7 +125,7 @@ const CreateReviewISBN = () => {
     try {
       const token = await getToken();
       await axios.post(
-        "http://localhost:3000/api/reviews",
+        "/api/reviews",
         {
           book_isbn: isbn,
           review_text,

@@ -22,9 +22,6 @@ function HomePage() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Remove API_BASE_URL if using relative paths
-  // const API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
-
   // State for search parameters
   const [searchParams, setSearchParams] = useState({
     author: "",

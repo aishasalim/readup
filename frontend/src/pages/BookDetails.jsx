@@ -89,7 +89,7 @@ function BookDetails() {
       const bookData = book; // Assuming 'book' is the full book object in your component
 
       await axios.post(
-        `http://localhost:3000/api/lists/${listId}/items`,
+        `/api/lists/${listId}/items`,
         { book: bookData },
         {
           headers: {
@@ -120,7 +120,7 @@ function BookDetails() {
       setLoadingLists(true);
       const token = await getToken();
 
-      const response = await axios.get("http://localhost:3000/api/lists", {
+      const response = await axios.get("/api/lists", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -153,7 +153,7 @@ function BookDetails() {
       setCreatingListLoading(true);
       const token = await getToken();
       const response = await axios.post(
-        "http://localhost:3000/api/lists",
+        "/api/lists",
         { name: newListName },
         {
           headers: {

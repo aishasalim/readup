@@ -13,11 +13,9 @@ import {
   CardContent,
   CardHeader,
   Avatar,
-  IconButton,
   Container,
   Snackbar,
 } from "@mui/material";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
 import axios from "axios";
 import Navbar from "../components/Navbar.jsx";
 import { useNavigate } from "react-router-dom";
@@ -124,12 +122,9 @@ const CreateReviewSearch = () => {
       if (title.trim()) params.title = title.trim();
       if (isbn.trim()) params.isbn = isbn.trim();
 
-      const response = await axios.get(
-        "http://localhost:3000/api/books/search",
-        {
-          params,
-        }
-      );
+      const response = await axios.get("/api/books/search", {
+        params,
+      });
 
       // Assuming the API returns a list of books
       const books = response.data.results.lists.flatMap((list) => list.books);
@@ -205,7 +200,7 @@ const CreateReviewSearch = () => {
       const token = await getToken();
 
       await axios.post(
-        "http://localhost:3000/api/reviews",
+        "/api/reviews",
         {
           book_isbn: selectedBook.primary_isbn13, // Use the book's ISBN
           review_text,

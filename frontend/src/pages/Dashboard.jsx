@@ -81,7 +81,7 @@ const Dashboard = () => {
       try {
         const token = await getToken();
 
-        const response = await axios.get("http://localhost:3000/api/lists", {
+        const response = await axios.get("/api/lists", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -156,14 +156,11 @@ const Dashboard = () => {
       try {
         const token = await getToken();
 
-        const response = await axios.get(
-          `http://localhost:3000/api/reviews/user/${user.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await axios.get(`/api/reviews/user/${user.id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         setReviews(response.data);
         setError(null);
 
@@ -202,14 +199,11 @@ const Dashboard = () => {
     try {
       const token = await getToken();
 
-      await axios.delete(
-        `http://localhost:3000/api/lists/${listId}/items/${bookIsbn}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await axios.delete(`/api/lists/${listId}/items/${bookIsbn}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       // Update the state to remove the book from the list
       setLists((prevLists) =>
@@ -243,7 +237,7 @@ const Dashboard = () => {
       const token = await getToken();
 
       await axios.put(
-        `http://localhost:3000/api/lists/${currentListId}/items/${selectedBook.book_isbn}/move/${targetListId}`,
+        `/api/lists/${currentListId}/items/${selectedBook.book_isbn}/move/${targetListId}`,
         {},
         {
           headers: {
